@@ -1,0 +1,94 @@
+/**
+ * 창고 상세 — 탭·헤더 정렬
+ * 가로 폭은 `warehouse-page-shell` (warehousePageShell.css) 와 목록 페이지 공통
+ */
+@import './warehousePageShell.css';
+
+.warehouse-detail-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+  min-height: 36px;
+}
+
+.warehouse-detail-page__alert {
+  margin-bottom: 16px !important;
+}
+
+.warehouse-detail-page__tabs.ant-tabs {
+  margin-top: 0;
+}
+
+.warehouse-detail-page__tabs.ant-tabs .ant-tabs-nav-wrap {
+  justify-content: flex-start;
+}
+
+.warehouse-detail-page__tabs.ant-tabs-top > .ant-tabs-nav {
+  margin-bottom: 16px !important;
+}
+
+.warehouse-detail-page__tabs.ant-tabs-top > .ant-tabs-nav::before {
+  border-bottom-color: #e8eaed;
+}
+
+/* 리스트 탭: 기본정보 카드와 동일 보더·그림자 */
+.warehouse-detail-tab-surface {
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.045);
+  padding: 20px 22px 22px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 576px) {
+  .warehouse-detail-tab-surface {
+    padding: 16px 14px 18px;
+  }
+}
+
+/* ── 레이아웃 설계 탭: 캔버스 작업공간 최대화 ── */
+/* 이 탭만 max-width 해제하고 viewport 높이까지 확장 */
+.warehouse-detail-page__inner--designer {
+  max-width: none !important;
+  padding-left: 16px;
+  padding-right: 16px;
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.warehouse-detail-page__inner--designer .warehouse-detail-page__tabs.ant-tabs {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.warehouse-detail-page__inner--designer
+  .warehouse-detail-page__tabs.ant-tabs
+  > .ant-tabs-content-holder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.warehouse-detail-page__inner--designer
+  .warehouse-detail-page__tabs.ant-tabs
+  .ant-tabs-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.warehouse-detail-page__inner--designer
+  .warehouse-detail-page__tabs.ant-tabs
+  .ant-tabs-tabpane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

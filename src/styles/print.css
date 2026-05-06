@@ -1,0 +1,134 @@
+/* ═══════════════════════════════════════════
+   Global Print Stylesheet
+   — 모든 지시서 인쇄에 공통 적용
+   — 아래 규칙은 전부 @media print (또는 screen 전용 .print-from-dom-source) 안에만 있음.
+     화면의 창고 Konva 편집기(.rack-layout-editor-dark 등)에는 적용되지 않음.
+   — @media print 내부의 #root·body 배경 규칙은 인쇄 시에만 적용되며,
+     일반 화면에서는 .rack-layout-editor-dark의 @media screen 전용 규칙이 우선한다.
+   ═══════════════════════════════════════════ */
+
+/* 화면에서만 숨김: react-to-print가 DOM을 복제할 때 레이아웃·Canvas가 유지되도록 display:none 대신 오프스크린 */
+@media screen {
+  .print-from-dom-source {
+    position: fixed;
+    left: -12000px;
+    top: 0;
+    width: 210mm;
+    max-height: 100vh;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    z-index: -1;
+  }
+}
+
+@media print {
+  /* ── 1. 웹 UI 전부 숨김 (SPA 메인 문서만)
+     react-to-print iframe에는 #root가 없음 → 예전 규칙은 본문 전체가 display:none 되어 백지 인쇄됨 */
+  body:has(#root) > *:not(#root) {
+    display: none !important;
+  }
+
+  /* 인쇄 전용 루트(react-to-print 등): 본문 직계 자식이 지시서일 때 확실히 표시 */
+  body:not(:has(#root)) > .print-doc {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    opacity: 1 !important;
+  }
+  .ant-layout-sider,
+  .ant-layout-header,
+  .ant-breadcrumb,
+  .no-print,
+  nav, header, footer,
+  [class*="Sider"],
+  [class*="Header"] { display: none !important; }
+
+  /* ── 2. 콘텐츠 영역 풀사이즈 ── */
+  .ant-layout,
+  .ant-layout-content,
+  #root,
+  body,
+  html {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  .ant-layout { margin-left: 0 !important; }
+
+  /* ── 3. 인쇄 영역만 표시 ── */
+  .print-area {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-doc svg,
+  .print-only svg,
+  .print-doc canvas,
+  .print-ds-qr-block canvas,
+  .print-ds-header canvas {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-ds-header,
+  .print-ds-logo,
+  .print-ds-qr-block {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    visibility: visible !important;
+    display: flex !important;
+  }
+
+  .print-ds-header {
+    flex-direction: column !important;
+  }
+
+  .print-ds-header > div:first-child {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+  }
+
+  /* ── 4. 배경색 인쇄 보장 ── */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* ── 5. A4 페이지 설정 (하단 여백 넉넉히 — 발행일시·담당자 잘림 방지) ── */
+  @page {
+    size: A4 portrait;
+    margin: 14mm 12mm 18mm 12mm;
+  }
+
+  /* ── 6. 인쇄 테이블 ── */
+  .print-doc { font-family: 'Pretendard', -apple-system, sans-serif; color: #000; }
+  .print-doc table { page-break-inside: auto; }
+  .print-doc tr { page-break-inside: avoid; }
+
+  /* 지시서 통일 템플릿 (.print-ds-root) — 세부 타이포·색은 PrintDocument 컴포넌트 인라인과 동일 계열 */
+  .print-only .print-ds-root,
+  .print-from-dom-source .print-ds-root {
+    visibility: visible !important;
+    display: block !important;
+    padding-bottom: 10mm !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-ds-issued-at {
+    visibility: visible !important;
+    display: block !important;
+    margin-bottom: 4mm !important;
+  }
+}

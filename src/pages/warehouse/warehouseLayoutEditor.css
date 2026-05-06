@@ -1,0 +1,777 @@
+/**
+ * 창고 레이아웃 편집 허브(구역·랙 탭) 공통 패널·캔버스 영역
+ * Ant Design 사이드바 네이비(#001529)와 통일된 슬레이트/네이비 톤
+ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/**
+ * 레이아웃 편집기 라우트: 문서(body) 스크롤 차단 — 랙 탭 등에서 페이지 높이가 늘어나며 생기는 무한 스크롤 방지
+ */
+html.warehouse-layout-editor-no-doc-scroll,
+html.warehouse-layout-editor-no-doc-scroll body {
+  overflow: hidden !important;
+  height: 100% !important;
+  max-height: 100vh !important;
+}
+
+/** MainLayout Content / Outlet — 편집기에서만 */
+.warehouse-layout-editor-shell-main,
+.warehouse-layout-editor-shell-outlet {
+  overflow: hidden !important;
+}
+
+/**
+ * 캔버스 호스트: 부모가 flex column이면 남는 높이만 씀 (100vh 고정값은 스크롤·짤림 유발)
+ */
+.warehouse-editor-canvas-host {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+}
+
+.warehouse-editor-panel-card.ant-card {
+  border-color: #c8cdd6;
+  background: #ffffff;
+}
+
+.warehouse-editor-panel-card .ant-card-head {
+  min-height: 40px;
+  padding: 0 12px;
+  background: #e8ecf2;
+  border-bottom: 1px solid #d0d5de;
+  color: #1e2a3a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.warehouse-editor-panel-card .ant-card-head-title {
+  padding: 10px 0;
+  color: #1e2a3a;
+}
+
+.warehouse-editor-panel-card .ant-card-body {
+  background: #ffffff;
+  color: #1e2a3a;
+}
+
+.warehouse-editor-panel-card .ant-table {
+  background: transparent;
+  color: #1e2a3a;
+}
+
+.warehouse-editor-panel-card .ant-table-thead > tr > th {
+  background: #e8ecf2 !important;
+  color: #7a8494 !important;
+  border-bottom: 1px solid #d0d5de;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.warehouse-editor-panel-card .ant-table-tbody > tr > td {
+  border-bottom-color: #e8ecf2;
+}
+
+.warehouse-editor-panel-card .ant-table-tbody > tr:hover > td {
+  background: #f5f7fa !important;
+}
+
+/* 구역 탭 우측 속성 패널 등 소제목 */
+.warehouse-editor-side-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a94a6;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'IBM Plex Sans', 'Pretendard', system-ui, sans-serif;
+}
+
+/* 구역 탭 메인 래퍼 — 편집기 컨테이너 톤 */
+.warehouse-editor-zone-tab-root {
+  background: #f0f3f8;
+  border: 1px solid #c8cdd6;
+  border-radius: 8px;
+  overflow: hidden !important;
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  font-family: 'IBM Plex Sans', 'Pretendard', system-ui, sans-serif;
+}
+
+/* 레이아웃 탭 좌측 속성 패널 */
+.warehouse-editor-aside-flat {
+  background: #e8ecf2 !important;
+  border-right: 1px solid #d0d5de !important;
+  color: #1e2a3a;
+}
+
+.warehouse-editor-aside-live-metrics {
+  background: #e8ecf2;
+  border-top: 1px solid #d0d5de;
+  color: #5a6478;
+}
+
+.warehouse-layout-editor-hub-root {
+  isolation: isolate;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  background: #e8ecf2;
+}
+
+.warehouse-layout-editor-hub-inner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  padding: 8px 10px 8px;
+  border-radius: 0;
+  background: #e8ecf2;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/**
+ * JS에서 innerHeight - getBoundingClientRect().top 으로 픽셀 고정 (calc 백업)
+ * --warehouse-editor-hub-pinned-height 는 Hub에서 설정
+ */
+.warehouse-layout-editor-hub-inner.warehouse-layout-editor-hub-height-lock {
+  flex: none !important;
+  min-height: 0 !important;
+  max-height: var(--warehouse-editor-hub-pinned-height, calc(100vh - 64px - 52px - 12px)) !important;
+  height: var(--warehouse-editor-hub-pinned-height, calc(100vh - 64px - 52px - 12px)) !important;
+  overflow: hidden !important;
+}
+
+/* Ant Tabs: 패널이 남은 세로 공간을 전부 사용 */
+.warehouse-layout-editor-tabs.ant-tabs {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-nav {
+  flex-shrink: 0;
+  margin: 0 0 10px !important;
+  padding: 0 8px;
+  background: transparent;
+  border-bottom: none;
+}
+
+.warehouse-editor-command-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  margin-bottom: 10px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 252, 0.88)),
+    repeating-linear-gradient(90deg, rgba(55, 138, 221, 0.04) 0 1px, transparent 1px 18px);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+}
+
+.warehouse-editor-command-title {
+  min-width: 172px;
+}
+
+.warehouse-editor-command-title .ant-typography {
+  color: #0f172a !important;
+  font-size: 17px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.02em;
+}
+
+.warehouse-editor-command-kicker.ant-typography {
+  display: block;
+  margin-bottom: 2px;
+  color: #378add !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.warehouse-editor-command-label.ant-typography {
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.warehouse-editor-command-spacer {
+  flex: 1;
+}
+
+.warehouse-editor-command-help.ant-typography {
+  color: #64748b !important;
+  font-size: 12px !important;
+}
+
+.warehouse-editor-breadcrumb-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  margin: 0 0 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.64);
+  box-shadow: none;
+}
+
+.warehouse-editor-breadcrumb-bar .ant-breadcrumb {
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.warehouse-editor-breadcrumb-bar .ant-breadcrumb-link,
+.warehouse-editor-breadcrumb-bar .ant-breadcrumb-separator {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  line-height: 20px;
+  color: #64748b;
+}
+
+.warehouse-editor-breadcrumb-bar .ant-breadcrumb a {
+  color: #378add;
+  font-weight: 700;
+}
+
+.warehouse-editor-breadcrumb-bar .ant-breadcrumb li:last-child .ant-breadcrumb-link {
+  color: #334155;
+  font-weight: 700;
+}
+
+.warehouse-editor-breadcrumb-actions {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.warehouse-layout-editor-breadcrumb {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: #8a94a6 !important;
+}
+
+.warehouse-layout-editor-warehouse-select .ant-select-selector {
+  height: 36px !important;
+  min-height: 36px !important;
+  background: #f8fafc !important;
+  border-color: rgba(55, 138, 221, 0.24) !important;
+  color: #1e2a3a !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.warehouse-layout-editor-warehouse-select.ant-select-focused .ant-select-selector {
+  border-color: rgba(239, 159, 39, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(239, 159, 39, 0.14) !important;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-content-holder {
+  flex: 1;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-content,
+.warehouse-layout-editor-tabs .ant-tabs-content-top {
+  height: 100%;
+  min-height: 0;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-tabpane {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-tab {
+  color: #8a94a6 !important;
+  font-size: 13px !important;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #854F0B !important;
+  font-weight: 500 !important;
+}
+
+.warehouse-layout-editor-tabs .ant-tabs-ink-bar {
+  background: #EF9F27 !important;
+  height: 2px !important;
+}
+
+.warehouse-layout-editor-tab-panel-inner {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.warehouse-editor-control-btn.ant-btn {
+  height: 30px;
+  border-radius: 999px !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.warehouse-editor-control-btn.ant-btn:hover {
+  border-color: rgba(55, 138, 221, 0.5) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.warehouse-editor-control-btn--accent.ant-btn {
+  border-color: rgba(239,159,39,0.42) !important;
+  background: linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.88)) !important;
+  color: #9a5b07 !important;
+}
+
+/* 랙 편집: 단일 바닥 — 캔버스에 추가 테두리 없음 */
+.warehouse-editor-zone-tab-root .warehouse-editor-canvas-host {
+  border-radius: 0;
+  border: none;
+}
+
+/* 레이아웃·모니터링 탭: 다크 톤 안내 알림 */
+.warehouse-editor-alert-dark.ant-alert.ant-alert-info {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.warehouse-editor-alert-dark .ant-alert-icon {
+  color: #5C8BD6;
+}
+
+.warehouse-editor-alert-dark .ant-alert-message {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.warehouse-editor-alert-dark .ant-alert-description {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* 레이아웃/관제 상단 툴바 */
+.warehouse-editor-combined-toolbar .ant-input-affix-wrapper,
+.warehouse-editor-combined-toolbar .ant-input-search .ant-input-group .ant-input,
+.warehouse-editor-combined-toolbar .ant-input-search > .ant-input-group > .ant-input-group-addon:last-child .ant-btn {
+  background: #ffffff;
+  border-color: #c8cdd6;
+  color: #5a6478;
+}
+
+.warehouse-editor-combined-toolbar .ant-input::placeholder {
+  color: #9aa3b4;
+}
+
+/* ═══ 랙 편집 탭: Industrial Dark ═══ */
+@media screen {
+  .rack-layout-editor-dark {
+    color-scheme: light !important;
+    background: #edf3fa !important;
+    border-color: rgba(148, 163, 184, 0.38) !important;
+    font-family: 'IBM Plex Sans', 'Pretendard', system-ui, sans-serif;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__aside {
+    background: #e8ecf2 !important;
+    border-right-color: #d0d5de !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__title {
+    color: #8a94a6 !important;
+    font-weight: 600 !important;
+    font-size: 10px !important;
+    letter-spacing: 0.07em !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__muted {
+    color: #5a6478 !important;
+  }
+
+  .rack-layout-editor-dark .ant-collapse {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .rack-layout-editor-dark .ant-collapse-item {
+    border-bottom: 1px solid #d0d5de !important;
+  }
+
+  /* ── Wizard 카드 스타일 (단계별 카드) ── */
+  .rack-layout-editor-dark .wizard-collapse > .ant-collapse-item {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    margin-bottom: 10px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+  }
+  .rack-layout-editor-dark .wizard-collapse > .ant-collapse-item-active {
+    border-color: #93c5fd !important;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08) !important;
+  }
+  .rack-layout-editor-dark .wizard-collapse > .ant-collapse-item:last-child {
+    margin-bottom: 0 !important;
+  }
+  .rack-layout-editor-dark .wizard-collapse .ant-collapse-header {
+    padding: 12px 14px !important;
+    background: transparent !important;
+  }
+  .rack-layout-editor-dark .wizard-collapse .ant-collapse-content {
+    background: transparent !important;
+  }
+  .rack-layout-editor-dark .wizard-collapse .ant-collapse-content-box {
+    background: transparent !important;
+    padding: 12px 14px 14px !important;
+  }
+
+
+  .rack-layout-editor-dark .ant-collapse-header {
+    color: #1e2a3a !important;
+    background: transparent !important;
+    font-weight: 500 !important;
+  }
+
+  .rack-layout-editor-dark .ant-collapse-content {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .rack-layout-editor-dark .ant-collapse-content-box {
+    background: #ffffff !important;
+    padding: 10px 12px 14px !important;
+  }
+
+  .rack-layout-editor-dark .ant-form-item-label > label {
+    color: #7a8494 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+
+  /* wrapper 들만 32px + 외곽 보더. inner input 은 wrapper 보더 침범하지 않게 분리. */
+  .rack-layout-editor-dark .ant-input,
+  .rack-layout-editor-dark .ant-input-affix-wrapper,
+  .rack-layout-editor-dark .ant-input-number {
+    height: 32px !important;
+    background: #ffffff !important;
+    border: 1px solid #c8cdd6 !important;
+    color: #1e2a3a !important;
+    box-sizing: border-box !important;
+  }
+  /* wrapper 안 inner input 은 height 자동 + 자체 보더 제거 (wrapper 보더 안 가리게) */
+  .rack-layout-editor-dark .ant-input-number-input {
+    height: auto !important;
+    border: none !important;
+    background: transparent !important;
+    color: #1e2a3a !important;
+  }
+  .rack-layout-editor-dark .ant-input-affix-wrapper > input.ant-input {
+    height: auto !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  /* Textarea 는 multi-line 이므로 height 자동 */
+  .rack-layout-editor-dark textarea.ant-input {
+    height: auto !important;
+    min-height: 64px !important;
+  }
+
+  .rack-layout-editor-dark .ant-input:focus,
+  .rack-layout-editor-dark .ant-input-affix-wrapper-focused,
+  .rack-layout-editor-dark .ant-input-number-focused {
+    border-color: rgba(239,159,39,0.5) !important;
+    box-shadow: 0 0 0 2px rgba(239,159,39,0.18) !important;
+  }
+
+  .rack-layout-editor-dark .ant-input::placeholder {
+    color: #8a94a6 !important;
+  }
+
+  .rack-layout-editor-dark .ant-select .ant-select-selector {
+    height: 32px !important;
+    background: #ffffff !important;
+    border-color: #c8cdd6 !important;
+    color: #1e2a3a !important;
+  }
+
+  .rack-layout-editor-dark .ant-select-arrow,
+  .rack-layout-editor-dark .ant-select-selection-item {
+    color: #5a6478 !important;
+  }
+
+  .rack-layout-editor-dark .ant-divider {
+    border-color: #d0d5de !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__toolbar {
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(241,245,249,0.86)) !important;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.78) !important;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__toolbar .ant-btn-default {
+    background: #ffffff !important;
+    border-color: #c8cdd6 !important;
+    color: #5a6478 !important;
+    transition: background 150ms ease !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__toolbar .ant-btn-default:hover {
+    background: #f5f7fa !important;
+    border-color: #c8cdd6 !important;
+    color: #1e2a3a !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__canvas-shell {
+    background:
+      radial-gradient(circle at 20% 18%, rgba(55, 138, 221, 0.1), transparent 26%),
+      linear-gradient(135deg, #eef5fb 0%, #e5edf7 100%) !important;
+  }
+
+  .rack-layout-editor-dark .rack-layout-editor-dark__footer {
+    background: #e8ecf2 !important;
+    border-top-color: #d0d5de !important;
+    color: #9aa3b4 !important;
+    font-size: 10px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    padding: 3px 10px !important;
+  }
+
+  .rack-editor-overlay-card.ant-card {
+    background: #ffffff !important;
+    border-color: #c8cdd6 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .rack-editor-overlay-card .ant-card-head {
+    background: #e8ecf2 !important;
+    border-bottom-color: #d0d5de !important;
+    color: #1e2a3a !important;
+    min-height: 40px !important;
+    font-weight: 600 !important;
+  }
+
+  .rack-editor-overlay-card .ant-card-head-title {
+    color: #1e2a3a !important;
+  }
+
+  .rack-editor-overlay-card .ant-card-body {
+    background: #ffffff !important;
+    color: #1e2a3a !important;
+  }
+
+  .rack-editor-overlay-card .ant-typography,
+  .rack-editor-overlay-card .ant-typography-secondary {
+    color: inherit !important;
+  }
+
+  .rack-editor-overlay-card code {
+    background: rgba(239,159,39,0.1) !important;
+    color: #854F0B !important;
+    border: 1px solid rgba(239,159,39,0.4) !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+  }
+
+  /* 랙 탭: 버튼 */
+  .rack-editor-btn-bulk.ant-btn-primary {
+    background: #1a56db !important;
+    color: #e6f1fb !important;
+    border: none !important;
+  }
+
+  .rack-editor-btn-bulk.ant-btn-primary:hover {
+    background: #1e429f !important;
+    color: #e6f1fb !important;
+  }
+
+  .rack-editor-btn-single.ant-btn-default {
+    background: transparent !important;
+    border-color: #c8cdd6 !important;
+    color: #5a6478 !important;
+  }
+
+  .rack-editor-btn-single.ant-btn-default:hover {
+    background: #f5f7fa !important;
+    border-color: #c8cdd6 !important;
+    color: #1e2a3a !important;
+  }
+
+  .rack-editor-btn-save.ant-btn {
+    background: #EF9F27 !important;
+    border-color: #EF9F27 !important;
+    color: #1a1000 !important;
+    font-weight: 600 !important;
+  }
+
+  .rack-editor-btn-save.ant-btn:hover {
+    background: #d08b1a !important;
+    border-color: #d08b1a !important;
+    color: #1a1000 !important;
+  }
+
+  .rack-editor-btn-amber-tool.ant-btn {
+    background: rgba(239,159,39,0.12) !important;
+    border-color: rgba(239,159,39,0.3) !important;
+    color: #EF9F27 !important;
+  }
+
+  .rack-editor-btn-amber-tool.ant-btn:hover {
+    background: rgba(239,159,39,0.2) !important;
+    border-color: rgba(239,159,39,0.45) !important;
+    color: #EF9F27 !important;
+  }
+
+  /* 우측 층 편집 패널 */
+  .rack-layout-editor-dark__aside-right {
+    background: #e8ecf2 !important;
+    border-left-color: #d0d5de !important;
+    border-top: 2px solid #EF9F27 !important;
+  }
+
+  .rack-editor-side-panel__kicker {
+    font-size: 12px;
+    color: #5a6478;
+  }
+
+  .rack-editor-side-panel__code {
+    margin-top: 2px;
+    font-size: 13px;
+    color: #1e2a3a;
+    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .rack-editor-side-panel__sub {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #5a6478;
+  }
+
+  .rack-editor-level-row__floor {
+    color: #8a94a6;
+    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+  }
+
+  .rack-editor-level-row__loc {
+    color: #9aa3b4;
+    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+  }
+
+  .rack-editor-level-row {
+    border-bottom: 1px solid #e8ecf2 !important;
+    background: #ffffff !important;
+  }
+
+  .rack-editor-level-row:hover {
+    background: #f5f7fa !important;
+  }
+
+  .rack-editor-location-preview {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    color: #854F0B !important;
+    background: rgba(239, 159, 39, 0.1) !important;
+  }
+
+  .rack-editor-select-dropdown.ant-select-dropdown {
+    background: #ffffff !important;
+  }
+
+  .rack-editor-select-dropdown .ant-select-item {
+    color: #1e2a3a !important;
+  }
+
+  .rack-editor-select-dropdown .ant-select-item-option-active,
+  .rack-editor-select-dropdown .ant-select-item-option-selected {
+    background: #f5f7fa !important;
+  }
+
+  .rack-level-status-select--has_stock .ant-select-selector {
+    background: #faeeda !important;
+    border-color: #EF9F27 !important;
+    border-left: 2px solid #EF9F27 !important;
+  }
+
+  .rack-level-status-select--has_stock .ant-select-selection-item,
+  .rack-level-status-select--has_stock .ant-select-selection-placeholder {
+    color: #854F0B !important;
+  }
+
+  .rack-level-status-select--in_progress .ant-select-selector {
+    background: #e6f1fb !important;
+    border-color: #378ADD !important;
+    border-left: 2px solid #378ADD !important;
+  }
+
+  .rack-level-status-select--in_progress .ant-select-selection-item,
+  .rack-level-status-select--in_progress .ant-select-selection-placeholder {
+    color: #0C447C !important;
+  }
+
+  .rack-level-status-select--empty .ant-select-selector {
+    background: #f0f2f5 !important;
+    border-color: #d0d5de !important;
+    border-left: 2px solid #d0d5de !important;
+  }
+
+  .rack-level-status-select--empty .ant-select-selection-item,
+  .rack-level-status-select--empty .ant-select-selection-placeholder {
+    color: #8a94a6 !important;
+  }
+
+  /* 구역 탭 저장 버튼 */
+  .layout-edit-btn-save.ant-btn-primary {
+    background: #EF9F27 !important;
+    border-color: #EF9F27 !important;
+    color: #1a1000 !important;
+    font-weight: 600 !important;
+  }
+
+  .layout-edit-btn-save.ant-btn-primary:hover {
+    background: #d08b1a !important;
+    border-color: #d08b1a !important;
+    color: #1a1000 !important;
+  }
+}
+
+.rack-header-logix { background: #EF9F27 !important; color: #1a1000 !important; }
+.rack-header-tech { background: #378ADD !important; color: #ffffff !important; }
+.rack-header-common { background: #888780 !important; color: #ffffff !important; }

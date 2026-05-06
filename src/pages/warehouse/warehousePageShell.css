@@ -1,0 +1,11 @@
+/**
+ * 창고 목록·상세 공통 콘텐츠 폭
+ * 상세 `warehouse-detail-page__inner`와 동일 수치 — 탭·테이블·목록 카드 정렬 통일
+ */
+.warehouse-page-shell {
+  max-width: 1280px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}

@@ -1,0 +1,51 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family:
+    'Pretendard Variable',
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  background: #fafafa;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Antd 테이블 모던 SaaS 오버라이드 ─── */
+.ant-table-thead > tr > th {
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  background: #fafbfc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+.ant-table-cell {
+  border-inline-end: none !important;
+}
+.ant-table-tbody > tr:hover > td {
+  background: #f8fafc !important;
+}
+
+#root {
+  background: transparent;
+}

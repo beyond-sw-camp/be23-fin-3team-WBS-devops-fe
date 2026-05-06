@@ -1,0 +1,233 @@
+/* WBS · We Build Systems — engineering login */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.login-wbs {
+  --wbs-bg: #0a0f1e;
+  --wbs-grid-major: rgba(56, 189, 248, 0.07);
+  --wbs-grid-minor: rgba(148, 163, 184, 0.04);
+  --wbs-cyan: #60a5fa;
+  --wbs-cyan-dim: rgba(96, 165, 250, 0.46);
+  --wbs-accent: #4f46e5;
+  --wbs-accent-hover: #6366f1;
+  --wbs-glass: rgba(255, 255, 255, 0.05);
+  --wbs-glass-border: rgba(255, 255, 255, 0.15);
+  --wbs-text: #ffffff;
+  --wbs-muted: rgba(255, 255, 255, 0.72);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 32px 20px 28px;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--wbs-bg);
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.login-wbs__panel {
+  position: relative;
+  z-index: 1;
+  width: min(430px, calc(100vw - 40px));
+  margin-left: auto;
+  margin-right: clamp(24px, 7vw, 140px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Canvas warehouse animation (LoginPage) */
+.login-wbs__canvas-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/* Blueprint grid + faint crosshair (unused if canvas bg active; kept for fallback) */
+.login-wbs__blueprint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--wbs-grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wbs-grid-major) 1px, transparent 1px),
+    linear-gradient(var(--wbs-grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wbs-grid-minor) 1px, transparent 1px);
+  background-size:
+    64px 64px,
+    64px 64px,
+    16px 16px,
+    16px 16px;
+  background-position: center;
+  opacity: 1;
+}
+
+.login-wbs__blueprint::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34, 211, 238, 0.06), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(6, 182, 212, 0.05), transparent 50%);
+}
+
+.login-wbs__brand {
+  text-align: left;
+  margin-bottom: 14px;
+  max-width: 100%;
+}
+
+.login-wbs__logo {
+  font-size: clamp(2.75rem, 7vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #ffffff;
+  line-height: 1.05;
+  margin: 0;
+  text-indent: 0.18em;
+  text-shadow: 0 8px 30px rgba(59, 130, 246, 0.2);
+}
+
+.login-wbs__slogan {
+  display: block;
+  margin-top: 12px;
+  font-size: clamp(0.88rem, 2.1vw, 1.02rem);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.95);
+}
+
+.login-wbs__tagline {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.86rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+}
+
+.login-wbs__card.ant-card {
+  width: 100%;
+  background: var(--wbs-glass) !important;
+  backdrop-filter: blur(30px) saturate(145%);
+  -webkit-backdrop-filter: blur(30px) saturate(145%);
+  border: 1px solid var(--wbs-glass-border) !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 20px 56px rgba(2, 6, 23, 0.42),
+    0 0 30px rgba(99, 102, 241, 0.16);
+}
+
+.login-wbs__card .ant-card-body {
+  padding: 32px 28px 28px !important;
+}
+
+.login-wbs__card-title {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--wbs-text);
+  text-align: center;
+}
+
+.login-wbs__card-sub {
+  display: block;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--wbs-muted);
+  margin-bottom: 24px;
+}
+
+.login-wbs__card .ant-form-item-label > label {
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 0.8125rem;
+}
+
+.login-wbs__card .ant-input-affix-wrapper,
+.login-wbs__card .ant-input-affix-wrapper input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: var(--wbs-text) !important;
+  min-height: 42px;
+}
+
+.login-wbs__card .ant-input-affix-wrapper input {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.login-wbs__card .ant-input,
+.login-wbs__card .ant-input-password input {
+  background: transparent !important;
+}
+
+.login-wbs__card input:-webkit-autofill,
+.login-wbs__card input:-webkit-autofill:hover,
+.login-wbs__card input:-webkit-autofill:focus,
+.login-wbs__card input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.login-wbs__card .ant-input-affix-wrapper .anticon {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.login-wbs__card .ant-input-affix-wrapper input::placeholder {
+  color: rgba(255, 255, 255, 0.48) !important;
+}
+
+.login-wbs__card .ant-input-affix-wrapper:hover {
+  border-color: rgba(129, 140, 248, 0.58) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2);
+}
+
+.login-wbs__card .ant-input-affix-wrapper-focused,
+.login-wbs__card .ant-input-affix-wrapper:focus-within {
+  border-color: rgba(129, 140, 248, 0.72) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 0 0 1px rgba(129, 140, 248, 0.66),
+    0 0 0 3px rgba(59, 130, 246, 0.16),
+    0 0 18px rgba(147, 51, 234, 0.2);
+}
+
+.login-wbs__submit.ant-btn-primary {
+  height: 48px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  background: linear-gradient(120deg, #0f2748 0%, #14315a 56%, #1b3f72 100%) !important;
+  box-shadow:
+    0 6px 16px rgba(37, 99, 235, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
+.login-wbs__submit.ant-btn-primary:hover {
+  background: linear-gradient(120deg, #14315a 0%, #1a3b69 56%, #22467a 100%) !important;
+  box-shadow:
+    0 8px 20px rgba(37, 99, 235, 0.24),
+    0 0 12px rgba(59, 130, 246, 0.16);
+}
+
+@media (max-width: 900px) {
+  .login-wbs__panel {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .login-wbs__brand {
+    text-align: center;
+  }
+}

@@ -1,0 +1,182 @@
+/* 대시보드 페이지 (라이트) — 아웃렛 패딩 상쇄 후 전체 폭 연그레이 */
+.dashboard-page {
+  margin: -24px;
+  padding: 24px;
+  border-radius: 8px;
+  min-height: min(70vh, 720px);
+  color: #1e293b;
+  background: #f8f9fa;
+}
+
+.dashboard-page > .ant-typography {
+  color: #0f172a !important;
+}
+
+/* 상단 요약 카드 — 화이트 + 연한 테두리 (포인트 컬러는 TSX에서 유지) */
+.dashboard-stat-card.ant-card {
+  background: #ffffff !important;
+  border: 1px solid #e8eaed !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+
+.dashboard-stat-card.ant-card:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+  border-color: #dde1e6 !important;
+}
+
+/* 탭 */
+.dashboard-tabs.ant-tabs .ant-tabs-nav::before {
+  border-color: #f0f0f0 !important;
+}
+
+.dashboard-tabs.ant-tabs .ant-tabs-tab {
+  color: rgba(0, 0, 0, 0.55) !important;
+}
+
+.dashboard-tabs.ant-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1677ff !important;
+}
+
+.dashboard-tabs.ant-tabs .ant-tabs-ink-bar {
+  background: #1677ff !important;
+}
+
+/* 탭 내부 패널 카드 */
+.dashboard-glass-card.ant-card {
+  background: #ffffff !important;
+  border: 1px solid #e8eaed !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-glass-card .ant-card-head {
+  border-bottom-color: #f0f0f0 !important;
+  color: rgba(0, 0, 0, 0.88) !important;
+  min-height: 46px;
+}
+
+.dashboard-glass-card .ant-card-head-title {
+  color: rgba(0, 0, 0, 0.88) !important;
+}
+
+.dashboard-glass-card .ant-card-extra .ant-btn {
+  color: rgba(0, 0, 0, 0.45) !important;
+}
+
+.dashboard-glass-card .ant-card-extra .ant-btn:hover {
+  color: #1677ff !important;
+  background: rgba(22, 119, 255, 0.06) !important;
+}
+
+/* 품번 표 활성 행 */
+.dashboard-sku-row--active td {
+  background: #e6f4ff !important;
+}
+
+.dashboard-page .row-shortage td {
+  background: #fff1f0 !important;
+}
+
+.dashboard-page .row-shortage:hover td {
+  background: #ffe7e6 !important;
+}
+
+/* 미니맵 래퍼 */
+.dashboard-minimap-wrap {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e8eaed;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* Stage 가 카드 본문 가용 높이를 모두 차지하도록 */
+.dashboard-minimap-stage-box {
+  flex: 1 1 auto;
+  min-height: 160px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-minimap-legend {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.dashboard-minimap-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dashboard-minimap-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dashboard-minimap-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 92px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #dbeafe;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.dashboard-minimap-tooltip strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.dashboard-log-list .ant-list-item {
+  padding: 6px 0 !important;
+}
+
+.dashboard-sku-table .ant-table-cell-fix-right-first::after {
+  box-shadow: none !important;
+}
+
+.dashboard-sku-table .ant-table-thead > tr > th:last-child,
+.dashboard-sku-table .ant-table-tbody > tr > td:last-child {
+  border-right: none !important;
+}
+
+@media (min-width: 992px) {
+  .dashboard-stock-card {
+    height: 750px;
+  }
+
+  .dashboard-sku-sidebar-col {
+    height: 750px;
+  }
+}

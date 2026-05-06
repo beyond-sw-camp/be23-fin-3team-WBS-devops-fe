@@ -1,0 +1,257 @@
+/* 창고 상세 — 기본정보 (부모 .warehouse-detail-page__inner 1280px와 동일 폭) */
+.warehouse-info-dashboard {
+  width: 100%;
+  min-height: 420px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.warehouse-info-dashboard__inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.warehouse-info-dashboard__hero.ant-card {
+  border-radius: 10px;
+  border: 1px solid #e8eaed;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.045);
+  background: #fff;
+}
+
+.warehouse-info-dashboard__hero .ant-card-body {
+  padding: 28px 32px 26px;
+}
+
+@media (max-width: 768px) {
+  .warehouse-info-dashboard__hero .ant-card-body {
+    padding: 22px 20px 20px;
+  }
+}
+
+.warehouse-info-dashboard__spec-head {
+  margin: 0 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #495057;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.warehouse-info-dashboard__spec-list {
+  margin: 0;
+  padding: 0;
+}
+
+.warehouse-info-dashboard__spec-row {
+  display: grid;
+  grid-template-columns: 124px 1fr;
+  gap: 14px 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f5;
+  align-items: start;
+}
+
+.warehouse-info-dashboard__spec-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.warehouse-info-dashboard__spec-row:first-of-type {
+  padding-top: 0;
+}
+
+.warehouse-info-dashboard__spec-dt {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #868e96;
+}
+
+.warehouse-info-dashboard__spec-dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #212529;
+  line-height: 1.5;
+}
+
+.warehouse-info-dashboard__spec-dd--muted {
+  font-weight: 500;
+  color: #495057;
+}
+
+.warehouse-info-dashboard__graph-panel {
+  height: 100%;
+  min-height: 320px;
+  padding: 6px 0 0 12px;
+  border-left: 1px solid #f1f3f5;
+}
+
+@media (max-width: 991px) {
+  .warehouse-info-dashboard__graph-panel {
+    border-left: none;
+    border-top: 1px solid #f1f3f5;
+    padding: 24px 0 0;
+    margin-top: 12px;
+    min-height: 0;
+  }
+}
+
+.warehouse-info-dashboard__graph-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #495057;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.warehouse-info-dashboard__graph-summary {
+  text-align: center;
+  margin-bottom: 18px;
+  padding: 0 8px;
+}
+
+.warehouse-info-dashboard__graph-summary-title {
+  display: block;
+  font-size: 15px !important;
+  color: #212529 !important;
+  margin-bottom: 8px !important;
+}
+
+.warehouse-info-dashboard__graph-summary-line {
+  margin-bottom: 4px !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  color: #6c757d !important;
+}
+
+.warehouse-info-dashboard__graph-summary-line:last-child {
+  margin-bottom: 0 !important;
+}
+
+.warehouse-info-dashboard__progress-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.warehouse-info-dashboard__graph-empty {
+  font-size: 15px;
+  color: #868e96;
+  padding: 40px 16px 24px;
+  text-align: center;
+}
+
+.warehouse-info-dashboard__progress-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: #212529;
+  letter-spacing: -0.03em;
+}
+
+.warehouse-info-dashboard__progress-pct {
+  font-size: 14px;
+  font-weight: 700;
+  color: #495057;
+}
+
+.warehouse-info-dashboard__progress-linear {
+  width: 100%;
+  max-width: 280px;
+  margin-top: 16px;
+}
+
+.warehouse-info-dashboard__graph-foot {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #868e96;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* 하단: 상태 배지 + 최근 반영 — 넓고 심플 */
+.warehouse-info-dashboard__status-strip {
+  margin-top: 20px;
+  padding: 22px 26px;
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.045);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 24px;
+}
+
+.warehouse-info-dashboard__status-strip-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  flex: 1 1 280px;
+}
+
+.warehouse-info-dashboard__status-strip-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.warehouse-info-dashboard__status-strip-label .anticon {
+  margin-right: 8px;
+  color: #52c41a;
+}
+
+.warehouse-info-dashboard__status-tag {
+  font-size: 14px !important;
+  padding: 4px 12px !important;
+  margin: 0 !important;
+  border-radius: 6px !important;
+}
+
+.warehouse-info-dashboard__status-strip-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex: 0 1 auto;
+  min-width: 200px;
+}
+
+.warehouse-info-dashboard__status-strip-meta-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #868e96;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.warehouse-info-dashboard__status-strip-meta-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #212529;
+  letter-spacing: -0.02em;
+}
+
+.warehouse-info-dashboard__status-strip-hint {
+  font-size: 12px;
+  color: #adb5bd;
+  margin-top: 4px;
+}
+
+@media (max-width: 576px) {
+  .warehouse-info-dashboard__status-strip-meta {
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+  }
+}
