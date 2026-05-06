@@ -9,6 +9,7 @@ import { ProductSearchModal } from '@/components/ProductSearch';
 import WarehouseLayoutDesigner from './WarehouseLayoutDesigner';
 import WarehouseCombinedLayoutStage from './WarehouseCombinedLayoutStage';
 import RackInventoryTab from './RackInventoryTab';
+import CapacityAnalysisPage from '@/pages/statistics/CapacityAnalysisPage';
 import './warehouseLayoutEditor.css';
 
 const { Title, Text } = Typography;
@@ -106,7 +107,13 @@ export default function WarehouseMonitoringPage() {
         <Tabs
           className="warehouse-layout-editor-tabs"
           style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}
-          activeKey={tabFromUrl === 'rack-inventory' || tabFromUrl === 'utilization' ? tabFromUrl : 'location'}
+          activeKey={
+            tabFromUrl === 'rack-inventory'
+              || tabFromUrl === 'utilization'
+              || tabFromUrl === 'capacity'
+              ? tabFromUrl
+              : 'location'
+          }
           onChange={(k) => {
             setSearchParams((prev) => {
               const p = new URLSearchParams(prev);
@@ -202,6 +209,15 @@ export default function WarehouseMonitoringPage() {
               children: (
                 <div className="warehouse-layout-editor-tab-panel-inner">
                   <RackInventoryTab key={resolvedWhId} warehouseId={resolvedWhId} />
+                </div>
+              ),
+            },
+            {
+              key: 'capacity',
+              label: '수용량 분석',
+              children: (
+                <div className="warehouse-layout-editor-tab-panel-inner" style={{ overflow: 'auto', padding: 12 }}>
+                  <CapacityAnalysisPage />
                 </div>
               ),
             },

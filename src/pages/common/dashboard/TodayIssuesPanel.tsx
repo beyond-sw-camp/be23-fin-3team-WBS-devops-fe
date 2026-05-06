@@ -46,7 +46,7 @@ export default function TodayIssuesPanel() {
       title: `지연 지시서 ${summary!.delayed_order_count}건`,
       detail: '마감 초과 - 즉시 확인 필요',
       actionLabel: '지시서 보기',
-      onAction: () => navigate('/orders/integrated?category=DELAYED'),
+      onAction: () => navigate('/orders/integrated?tab=issue'),
     });
   }
 
@@ -76,7 +76,7 @@ export default function TodayIssuesPanel() {
       title: `승인 대기 ${summary!.pending_approval_count}건`,
       detail: '출고 지시서 승인 필요',
       actionLabel: '승인 처리',
-      onAction: () => navigate('/orders/integrated?status=draft'),
+      onAction: () => navigate('/orders/integrated?tab=pending_approval'),
     });
   }
 

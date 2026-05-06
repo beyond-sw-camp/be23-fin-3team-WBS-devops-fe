@@ -40,7 +40,8 @@ function detailPath(item: PendingOrderItem): string {
 
 export default function PendingOrdersPanel() {
   const navigate = useNavigate();
-  const { data, isLoading } = usePendingOrders(5);
+  // 패널 안에서 스크롤로 더 보기 — limit 50 (전체보기는 통합 페이지로)
+  const { data, isLoading } = usePendingOrders(50);
   const [activeTab, setActiveTab] = useState<TabKey>('ALL');
 
   const filtered = useMemo(() => {
@@ -61,7 +62,7 @@ export default function PendingOrdersPanel() {
         </Space>
       )}
       extra={(
-        <Button type="link" size="small" onClick={() => navigate('/orders/integrated')}>
+        <Button type="link" size="small" onClick={() => navigate('/orders/integrated?tab=pending')}>
           전체 보기 ›
         </Button>
       )}
@@ -86,7 +87,7 @@ export default function PendingOrdersPanel() {
       {filtered.length === 0 ? (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="처리할 지시서가 없습니다" />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360, overflowY: 'auto', paddingRight: 4 }}>
           {filtered.map((it) => {
             const cat = CATEGORY_STYLE[it.category] ?? { bg: '#F8F7F2', border: '#888780', tag: 'default', label: it.category };
             const typeBadge = TYPE_BADGE[it.type];

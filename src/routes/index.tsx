@@ -63,7 +63,6 @@ import StockCountDetailPage from '@/pages/inventory/StockCountDetailPage';
 import InOutStatusPage from '@/pages/statistics/InOutStatusPage';
 import TurnoverPage from '@/pages/statistics/TurnoverPage';
 import RankingPage from '@/pages/statistics/RankingPage';
-import CapacityAnalysisPage from '@/pages/statistics/CapacityAnalysisPage';
 import LowStockAlertPage from '@/pages/common/LowStockAlertPage';
 
 // 공통 관리
@@ -186,7 +185,7 @@ export const routes: RouteObject[] = [
       { path: 'statistics/inout', element: <G r="STATISTICS"><InOutStatusPage /></G> },
       { path: 'statistics/turnover', element: <G r="STATISTICS"><TurnoverPage /></G> },
       { path: 'statistics/ranking', element: <G r="STATISTICS"><RankingPage /></G> },
-      { path: 'statistics/capacity', element: <G r="STATISTICS"><CapacityAnalysisPage /></G> },
+      // 수용량 분석은 /warehouse/monitoring?tab=capacity 로 이동됨
 
       // 공통 관리
       { path: 'common/notifications', element: <NotificationPage /> },

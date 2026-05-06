@@ -7,9 +7,11 @@ import { useAuthStore } from '@/stores/authStore';
  */
 export type DashboardPanelId =
   | 'pendingOrders'
-  | 'todayProgress'
+  | 'activeOrders'        // (신규) 실시간 진행 상황 — Streams 기반
   | 'minimap'
   | 'weeklyTrend'
+  | 'hourlyThroughput'    // (신규) 시간별 처리량 — Streams 기반
+  | 'returnRatio'         // (신규) 오늘 반품 비율 — Streams 기반
   | 'todayIssues'
   | 'lowStock';
 
@@ -18,14 +20,24 @@ export interface PanelConfig {
   visible: boolean;
 }
 
-/** 기본 레이아웃 — 신규 사용자 / 저장된 설정 없을 때 노출. 현재 화면과 동일 순서. */
+/**
+ * 기본 레이아웃 — 신규 사용자 / 저장된 설정 없을 때 노출.
+ *
+ * 순서 의도:
+ *   1. activeOrders — 한 row 통째로 (full width). 운영 한눈에.
+ *   2. pendingOrders / minimap / weeklyTrend — 작업 + 시각화 + 추세
+ *   3. hourlyThroughput / returnRatio / todayIssues — 처리량/반품/이슈
+ *   4. lowStock — 마지막
+ */
 const DEFAULT_LAYOUT: PanelConfig[] = [
-  { id: 'pendingOrders', visible: true },
-  { id: 'todayProgress', visible: true },
-  { id: 'minimap',       visible: true },
-  { id: 'weeklyTrend',   visible: true },
-  { id: 'todayIssues',   visible: true },
-  { id: 'lowStock',      visible: true },
+  { id: 'activeOrders',      visible: true },
+  { id: 'pendingOrders',     visible: true },
+  { id: 'minimap',           visible: true },
+  { id: 'weeklyTrend',       visible: true },
+  { id: 'hourlyThroughput',  visible: true },
+  { id: 'returnRatio',       visible: true },
+  { id: 'todayIssues',       visible: true },
+  { id: 'lowStock',          visible: true },
 ];
 
 const KEY_PREFIX = 'dashboard-layout';

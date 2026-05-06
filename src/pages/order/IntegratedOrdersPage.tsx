@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Typography, Table, Tag, Select, Space, Empty } from 'antd';
+import { Typography, Table, Tag, Select, Space, Empty, Tabs, Badge } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useIntegratedOrders } from '@/hooks/useDashboardQuery';
 import type { PendingOrderItem, PendingOrderType, PendingOrderCategory } from '@/types/dashboard';
@@ -8,34 +8,51 @@ import { ORDER_STATUS_CONFIG } from '@/types/order';
 
 const { Title, Text } = Typography;
 
+/**
+ * Tab 정의 — 카테고리를 업무 단계로 묶어 노출.
+ * BE 의 `category` 파라미터로 1:1 매핑되며, `pending` 은 가상 카테고리(미처리 합집합).
+ */
+type IntegratedTabKey = 'all' | 'pending' | 'today' | 'in_progress' | 'pending_approval' | 'completed' | 'issue';
+
+const TAB_TO_CATEGORY: Record<IntegratedTabKey, 'ALL' | PendingOrderCategory | 'PENDING'> = {
+  all:              'ALL',
+  pending:          'PENDING',           // 지연 + 오늘 + 진행중 + 승인대기 합 (BE 가상 카테고리)
+  today:            'TODAY',
+  in_progress:      'IN_PROGRESS',
+  pending_approval: 'PENDING_APPROVAL',
+  completed:        'COMPLETED',
+  issue:            'DELAYED',
+};
+
+const TAB_LABELS: Record<IntegratedTabKey, string> = {
+  all:              '전체',
+  pending:          '미처리',
+  today:            '오늘마감',
+  in_progress:      '진행중',
+  pending_approval: '승인대기',
+  completed:        '완료',
+  issue:            '지연',
+};
+
+const TAB_BADGE_COLOR: Record<IntegratedTabKey, string> = {
+  all:              '#64748b',
+  pending:          '#f59e0b',
+  today:            '#ef4444',
+  in_progress:      '#1677ff',
+  pending_approval: '#facc15',
+  completed:        '#52c41a',
+  issue:            '#f97316',
+};
+
+const TAB_KEYS: IntegratedTabKey[] = [
+  'all', 'pending', 'today', 'in_progress', 'pending_approval', 'completed', 'issue',
+];
+
 const TYPE_OPTIONS: { label: string; value: 'ALL' | PendingOrderType }[] = [
   { label: '전체', value: 'ALL' },
   { label: '입고', value: 'INBOUND' },
   { label: '출고', value: 'OUTBOUND' },
   { label: '이동', value: 'TRANSFER' },
-];
-
-const CATEGORY_OPTIONS: { label: string; value: 'ALL' | PendingOrderCategory }[] = [
-  { label: '전체', value: 'ALL' },
-  { label: '지연', value: 'DELAYED' },
-  { label: '오늘마감', value: 'TODAY' },
-  { label: '진행중', value: 'IN_PROGRESS' },
-  { label: '승인대기', value: 'PENDING_APPROVAL' },
-  { label: '미래 예정', value: 'UPCOMING' },
-  { label: '완료', value: 'COMPLETED' },
-  { label: '취소', value: 'CANCELLED' },
-];
-
-const STATUS_OPTIONS: { label: string; value: string }[] = [
-  { label: '전체', value: 'ALL' },
-  { label: '초안', value: 'draft' },
-  { label: '승인', value: 'approved' },
-  { label: '진행중', value: 'in_progress' },
-  { label: '검수중', value: 'received' },
-  { label: '적치중', value: 'placing' },
-  { label: '완료', value: 'completed' },
-  { label: '부분완료', value: 'partial' },
-  { label: '취소', value: 'cancelled' },
 ];
 
 const TYPE_BADGE: Record<PendingOrderItem['type'], { label: string; color: string }> = {
@@ -62,23 +79,51 @@ function detailPath(item: PendingOrderItem): string {
   }
 }
 
+function isValidTabKey(v: string | null): v is IntegratedTabKey {
+  return v != null && (TAB_KEYS as string[]).includes(v);
+}
+
 export default function IntegratedOrdersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const tabFromUrl = searchParams.get('tab');
+  const initialTab: IntegratedTabKey = isValidTabKey(tabFromUrl) ? tabFromUrl : 'all';
+  const [activeTab, setActiveTab] = useState<IntegratedTabKey>(initialTab);
+
+  // URL ?tab= 외부 변경(KPI 클릭 등) 동기화
+  useEffect(() => {
+    if (isValidTabKey(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const type = (searchParams.get('type') ?? 'ALL') as 'ALL' | PendingOrderType;
-  const category = (searchParams.get('category') ?? 'ALL') as 'ALL' | PendingOrderCategory;
-  const status = searchParams.get('status') ?? 'ALL';
   const page = Number(searchParams.get('page') ?? '0');
   const size = Number(searchParams.get('size') ?? '20');
+  const category = TAB_TO_CATEGORY[activeTab];
 
-  const { data, isLoading } = useIntegratedOrders({ type, category, status, page, size });
+  const { data, isLoading } = useIntegratedOrders({ type, category, status: 'ALL', page, size });
 
-  const updateParam = (key: string, value: string) => {
+  // 탭별 카운트 — 표시용 합계만 별도 호출 없이 현재 응답 total 만 표기
+  // (정확한 탭별 카운트는 BE 콜이 N번 필요하므로 생략 — 현재 탭 total 만)
+  const totalForActiveTab = data?.total_elements ?? 0;
+
+  const updateType = (value: 'ALL' | PendingOrderType) => {
     const next = new URLSearchParams(searchParams);
-    if (value === 'ALL' || value === '') next.delete(key);
-    else next.set(key, value);
-    if (key !== 'page') next.delete('page'); // 필터 바뀌면 페이지 초기화
+    if (value === 'ALL') next.delete('type');
+    else next.set('type', value);
+    next.delete('page');
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleTabChange = (k: string) => {
+    if (!isValidTabKey(k)) return;
+    setActiveTab(k);
+    const next = new URLSearchParams(searchParams);
+    if (k === 'all') next.delete('tab');
+    else next.set('tab', k);
+    next.delete('page');
     setSearchParams(next, { replace: true });
   };
 
@@ -127,66 +172,80 @@ export default function IntegratedOrdersPage() {
   ], []);
 
   return (
-    <>
-      <div className="order-list-tone" style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <Space>
-            <Title level={4} style={{ margin: 0 }}>지시서 목록</Title>
-            <Text type="secondary" style={{ fontSize: 12 }}>입고·출고·이동 전체 지시서 조회 (완료·취소 포함)</Text>
-          </Space>
-        </div>
-
-        <div>
-          <Space size={12} style={{ marginBottom: 10, flexWrap: 'wrap' }}>
-            <Space size={6}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>유형</span>
-              <Select size="small" value={type} onChange={(v) => updateParam('type', v)}
-                      options={TYPE_OPTIONS} style={{ minWidth: 100 }} />
-            </Space>
-            <Space size={6}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>카테고리</span>
-              <Select size="small" value={category} onChange={(v) => updateParam('category', v)}
-                      options={CATEGORY_OPTIONS} style={{ minWidth: 110 }} />
-            </Space>
-            <Space size={6}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>상태</span>
-              <Select size="small" value={status} onChange={(v) => updateParam('status', v)}
-                      options={STATUS_OPTIONS} style={{ minWidth: 100 }} />
-            </Space>
-          </Space>
-
-          <div style={{ marginTop: 14 }}>
-            {data && data.empty ? (
-              <Empty description="조건에 해당하는 지시서가 없습니다" style={{ marginTop: 80 }} />
-            ) : (
-              <Table
-                columns={columns}
-                dataSource={data?.content ?? []}
-                rowKey={(r) => `${r.type}-${r.order_id}`}
-                loading={isLoading}
-                size="middle"
-                onRow={(record) => ({
-                  onClick: () => navigate(detailPath(record)),
-                  style: { cursor: 'pointer', height: 52 },
-                })}
-                pagination={{
-                  current: (data?.number ?? 0) + 1,
-                  total: data?.total_elements ?? 0,
-                  pageSize: size,
-                  showSizeChanger: true,
-                  pageSizeOptions: ['10', '20', '50'],
-                  onChange: (p, ps) => {
-                    const next = new URLSearchParams(searchParams);
-                    next.set('page', String(p - 1));
-                    if (ps !== size) next.set('size', String(ps));
-                    setSearchParams(next, { replace: true });
-                  },
-                }}
-              />
-            )}
-          </div>
-        </div>
+    <div className="order-list-tone" style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+        <Space>
+          <Title level={4} style={{ margin: 0 }}>지시서 목록</Title>
+          <Text type="secondary" style={{ fontSize: 12 }}>입고·출고·이동 전체 지시서 조회 (완료·취소 포함)</Text>
+        </Space>
       </div>
+
+      {/* 필터 row — 유형 select */}
+      <Space size={12} style={{ marginBottom: 8, flexWrap: 'wrap' }}>
+        <Space size={6}>
+          <span style={{ fontSize: 12, color: '#64748b' }}>유형</span>
+          <Select
+            size="small"
+            value={type}
+            onChange={updateType}
+            options={TYPE_OPTIONS}
+            style={{ minWidth: 110 }}
+          />
+        </Space>
+      </Space>
+
+      {/* Tabs — 카테고리 분류 */}
+      <Tabs
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        items={TAB_KEYS.map((key) => ({
+          key,
+          label: (
+            <Space size={8}>
+              <span>{TAB_LABELS[key]}</span>
+              {key === activeTab && (
+                <Badge
+                  count={totalForActiveTab}
+                  showZero
+                  style={{ backgroundColor: TAB_BADGE_COLOR[key], color: '#fff' }}
+                  overflowCount={999}
+                />
+              )}
+            </Space>
+          ),
+        }))}
+        style={{ marginBottom: 8 }}
+      />
+
+      {data && data.empty ? (
+        <Empty description="조건에 해당하는 지시서가 없습니다" style={{ marginTop: 80 }} />
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={data?.content ?? []}
+          rowKey={(r) => `${r.type}-${r.order_id}`}
+          loading={isLoading}
+          size="middle"
+          onRow={(record) => ({
+            onClick: () => navigate(detailPath(record)),
+            style: { cursor: 'pointer', height: 52 },
+          })}
+          pagination={{
+            current: (data?.number ?? 0) + 1,
+            total: data?.total_elements ?? 0,
+            pageSize: size,
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50'],
+            onChange: (p, ps) => {
+              const next = new URLSearchParams(searchParams);
+              next.set('page', String(p - 1));
+              if (ps !== size) next.set('size', String(ps));
+              setSearchParams(next, { replace: true });
+            },
+          }}
+        />
+      )}
+
       <style>{`
         .order-list-tone .ant-table-thead > tr > th {
           background: #f8fafc !important;
@@ -196,6 +255,6 @@ export default function IntegratedOrdersPage() {
           border-bottom: 2px solid #dbe3ee !important;
         }
       `}</style>
-    </>
+    </div>
   );
 }

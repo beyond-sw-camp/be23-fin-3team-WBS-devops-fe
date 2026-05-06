@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Form, Input, Typography, App } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { login as loginApi } from '@/api/auth';
 import type { LoginRequest } from '@/types/user';
@@ -254,12 +255,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const storeLogin = useAuthStore((s) => s.login);
+  const queryClient = useQueryClient();
   const { message } = App.useApp();
 
   const onFinish = async (values: LoginRequest) => {
     setLoading(true);
     try {
       const user = await loginApi(values);
+      // 다른 회사 계정으로 갈아탔다면 옛 캐시 (warehouses 등) 비워야 함
+      queryClient.clear();
       storeLogin(user);
       message.success(`${user.name}님 환영합니다.`);
       navigate('/', { replace: true });

@@ -5,15 +5,16 @@ import { Typography, Card, Col, Row, List, Tag, Empty, Button, Tooltip, Space, S
 import {
   InboxOutlined,
   WarningOutlined,
-  ThunderboltOutlined,
   FileTextOutlined,
   CloudDownloadOutlined,
   StopOutlined,
 } from '@ant-design/icons';
 import { MapPinned, TriangleAlert, ExternalLink, Settings, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import PendingOrdersPanel from './dashboard/PendingOrdersPanel';
-import TodayProgressPanel from './dashboard/TodayProgressPanel';
+import ActiveOrdersPanel from './dashboard/ActiveOrdersPanel';
 import WeeklyTrendChart from './dashboard/WeeklyTrendChart';
+import HourlyThroughputChart from './dashboard/HourlyThroughputChart';
+import ReturnRatioPanel from './dashboard/ReturnRatioPanel';
 import TodayIssuesPanel from './dashboard/TodayIssuesPanel';
 import DashboardWarehouseMinimap from './dashboard/DashboardWarehouseMinimap';
 import { useDashboardSummary, useSafetyStocks } from '@/hooks/useDashboardQuery';
@@ -240,13 +241,15 @@ export default function DashboardPage() {
     </Card>
   );
 
-  const PANELS: Record<DashboardPanelId, { name: string; node: ReactNode }> = {
-    pendingOrders: { name: '처리 필요 지시서',  node: <PendingOrdersPanel /> },
-    todayProgress: { name: '오늘 처리 현황',     node: <TodayProgressPanel /> },
-    minimap:       { name: '창고 미니맵',        node: minimapNode },
-    weeklyTrend:   { name: '최근 7일 입·출고 추이', node: <WeeklyTrendChart /> },
-    todayIssues:   { name: '오늘의 이슈',        node: <TodayIssuesPanel /> },
-    lowStock:      { name: '재고 부족 품목',     node: lowStockNode },
+  const PANELS: Record<DashboardPanelId, { name: string; node: ReactNode; fullWidth?: boolean }> = {
+    pendingOrders:    { name: '처리 필요 지시서',       node: <PendingOrdersPanel /> },
+    activeOrders:     { name: '실시간 진행 상황',       node: <ActiveOrdersPanel /> },
+    minimap:          { name: '창고 미니맵',            node: minimapNode },
+    weeklyTrend:      { name: '최근 7일 입·출고 추이',  node: <WeeklyTrendChart /> },
+    hourlyThroughput: { name: '시간별 처리량 (지난 24h)', node: <HourlyThroughputChart /> },
+    returnRatio:      { name: '오늘 반품 비율',         node: <ReturnRatioPanel /> },
+    todayIssues:      { name: '오늘의 이슈',            node: <TodayIssuesPanel /> },
+    lowStock:         { name: '재고 부족 품목',         node: lowStockNode },
   };
 
   return (
@@ -292,16 +295,8 @@ export default function DashboardPage() {
             onClick={() => navigate('/order/inbound/new')}
           />
         </Col>
-        <Col xs={24} sm={12} flex="1 1 220px" style={{ minWidth: 0 }}>
-          <StatAccentCard
-            title="미처리 지시서"
-            subtitle="전체 미완료 (날짜 무관)"
-            value={summary?.integrated_order_count ?? 0}
-            accent="#fbbf24"
-            icon={<ThunderboltOutlined />}
-            onClick={() => navigate('/orders/integrated')}
-          />
-        </Col>
+        {/* "미처리 지시서" 카드 제거 — 처리 필요 지시서 패널이 같은 데이터를 탭별로 더 자세히 보여주고
+            전체 보기 버튼 라우팅도 동일(/orders/integrated?tab=pending) 이므로 중복. */}
         <Col xs={24} sm={12} flex="1 1 220px" style={{ minWidth: 0 }}>
           <StatAccentCard
             title="오늘 입·출고"
@@ -312,7 +307,7 @@ export default function DashboardPage() {
             secondaryLabel="출고"
             accent="#38bdf8"
             icon={<InboxOutlined />}
-            onClick={() => navigate('/orders/integrated')}
+            onClick={() => navigate('/orders/integrated?tab=today')}
           />
         </Col>
         <Col xs={24} sm={12} flex="1 1 220px" style={{ minWidth: 0 }}>
@@ -342,12 +337,12 @@ export default function DashboardPage() {
         {layout.map((p, idx) => {
           if (!editMode && !p.visible) return null;
           const panel = PANELS[p.id];
+          // fullWidth 패널은 row 통째로 차지 — 콘텐츠가 가로로 짧은 위젯에 사용
+          const colSpan = panel.fullWidth ? { xs: 24 } : { xs: 24, md: 12, xl: 8 };
           return (
             <Col
               key={p.id}
-              xs={24}
-              md={12}
-              xl={8}
+              {...colSpan}
               style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}
             >
               {editMode && (

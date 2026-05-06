@@ -144,7 +144,7 @@ const MENU_DEFS: MenuItem[] = [
       { key: '/statistics/inout', label: '입출고 현황' },
       { key: '/statistics/turnover', label: '재고 회전율' },
       { key: '/statistics/ranking', label: '품번별 출고 순위' },
-      { key: '/statistics/capacity', label: '수용량 분석' },
+      // 수용량 분석은 창고 모니터링 페이지의 탭으로 이동됨
     ],
   },
   {
@@ -516,6 +516,8 @@ export default function MainLayout() {
       icon: <LogoutOutlined />,
       label: '로그아웃',
       onClick: () => {
+        // 다른 회사 계정으로 재로그인 시 옛 데이터(warehouses 등) 잔존 차단
+        queryClient.clear();
         logout();
         navigate('/login');
       },

@@ -129,7 +129,8 @@ export const getPendingOrders = async (limit: number = 5): Promise<PendingOrderR
 /** 지시서 통합 페이지 — 페이지네이션 응답 */
 export interface GetIntegratedOrdersParams {
   type?: 'ALL' | PendingOrderType;
-  category?: 'ALL' | PendingOrderCategory;
+  /** 'PENDING' = BE 가상 카테고리 (지연/오늘/진행중/승인대기 합집합 — 미처리 탭) */
+  category?: 'ALL' | 'PENDING' | PendingOrderCategory;
   status?: string; // 'ALL' | 도메인 status
   page?: number;
   size?: number;
