@@ -32,8 +32,8 @@ export interface RagChatResponse {
 }
 
 export interface ChatRouteResponse {
-  mode: 'RAG' | 'WORK_QUERY' | 'SQL';
-  originalMode?: 'RAG' | 'WORK_QUERY' | 'SQL';
+  mode: 'GENERAL' | 'RAG' | 'WORK_QUERY' | 'SQL';
+  originalMode?: 'GENERAL' | 'RAG' | 'WORK_QUERY' | 'SQL';
   routeReason?: string;
   fallbackApplied?: boolean;
   errorCode?: string | null;
@@ -49,11 +49,13 @@ export async function askAiChat(
   message: string,
   history: ChatTurn[] = [],
   context?: WorkQueryContext,
+  userName?: string,
 ): Promise<ChatRouteResponse> {
   const res = await apiClient.post<ChatRouteResponse>('/ai-service/chat/ask', {
     question: message,
     history,
     context,
+    userName,
   });
   return res.data;
 }

@@ -27,6 +27,8 @@ apiClient.interceptors.request.use((config) => {
     const userId = claims?.sub;
     const role = claims?.role;
     const isDeveloper = claims?.isDeveloper;
+    const storedUserName = localStorage.getItem('userName');
+    const claimUserName = claims?.name ?? claims?.userName ?? claims?.username;
     if (typeof clientId === 'string' && clientId) {
       config.headers['X-Client-Id'] = clientId;
     }
@@ -35,6 +37,11 @@ apiClient.interceptors.request.use((config) => {
     }
     if (typeof role === 'string' && role) {
       config.headers['X-User-Role'] = role;
+    }
+    if (storedUserName) {
+      config.headers['X-User-Name'] = encodeURIComponent(storedUserName);
+    } else if (typeof claimUserName === 'string' && claimUserName) {
+      config.headers['X-User-Name'] = encodeURIComponent(claimUserName);
     }
     if (typeof isDeveloper === 'boolean') {
       config.headers['X-Is-Developer'] = String(isDeveloper);

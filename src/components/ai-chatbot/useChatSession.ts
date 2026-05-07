@@ -6,6 +6,7 @@ import {
   type WorkQueryContext,
   type WorkQueryResponse,
 } from '@/api/ai';
+import { useAuthStore } from '@/stores/authStore';
 
 export type AssistantRender =
   | { kind: 'work-query'; data: WorkQueryResponse }
@@ -32,6 +33,7 @@ const nextId = () => `m_${Date.now()}_${++_seq}`;
 export function useChatSession() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [pending, setPending] = useState(false);
+  const userName = useAuthStore((s) => s.user?.name);
 
   const pushAssistant = (render: AssistantRender) => {
     const id = nextId();
@@ -59,8 +61,8 @@ export function useChatSession() {
 
       try {
         const history = buildHistory(messages);
-        const data = await askAiChat(trimmed, history, buildContext(messages));
-        if (data.mode === 'RAG') {
+        const data = await askAiChat(trimmed, history, buildContext(messages), userName ?? localStorage.getItem('userName') ?? undefined);
+        if (data.mode === 'RAG' || data.mode === 'GENERAL') {
           pushAssistant({
             kind: 'rag',
             data: {
@@ -86,7 +88,7 @@ export function useChatSession() {
         setPending(false);
       }
     },
-    [messages, pending],
+    [messages, pending, userName],
   );
 
   return { messages, pending, send, cancel, clear };
@@ -97,7 +99,7 @@ function buildContext(messages: ChatMessage[]): WorkQueryContext | undefined {
     const message = messages[i];
     if (message.role === 'assistant' && message.render.kind === 'work-query') {
       const data = message.render.data;
-      if (data.followUp) {
+      if (data.followUp || data.rows.length === 0) {
         continue;
       }
       return {
@@ -129,6 +131,9 @@ function extractErr(err: unknown): string {
     const e = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
     if (e.response?.data?.message) {
       return e.response.data.message;
+    }
+    if (e.response?.status === 400) {
+      return '질문 요청 형식이 올바르지 않습니다. 입력 후 다시 전송해주세요.';
     }
     if (e.response?.status === 500) {
       return '업무 데이터를 조회하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';

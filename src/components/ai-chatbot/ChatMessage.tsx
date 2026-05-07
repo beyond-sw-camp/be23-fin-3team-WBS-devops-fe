@@ -45,14 +45,15 @@ export default function ChatMessage({ message }: Props) {
 function AssistantBody({ render }: { render: AssistantRender }) {
   if (render.kind === 'work-query') {
     const rows = render.data.rows;
+    if (rows.length === 0) {
+      return (
+        <Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
+          {render.data.answer || '죄송합니다. 요청하신 질문을 처리할 수 없습니다.'}
+        </Paragraph>
+      );
+    }
     return (
       <Space direction="vertical" size="small" style={{ width: '100%' }}>
-        <Space size={4} wrap>
-          <Tag color={intentColor(render.data.intent)}>{intentLabel(render.data.intent)}</Tag>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {resultLabel(render.data.intent, rows.length)}
-          </Text>
-        </Space>
         <Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
           {render.data.answer || fallbackSummary(render.data.intent, rows)}
         </Paragraph>
@@ -69,12 +70,6 @@ function AssistantBody({ render }: { render: AssistantRender }) {
   if (render.kind === 'rag') {
     return (
       <Space direction="vertical" size="small" style={{ width: '100%' }}>
-        <Space size={4} wrap>
-          <Tag color="purple">운영 가이드</Tag>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            RAG 문서 근거 답변
-          </Text>
-        </Space>
         <Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
           {render.data.answer}
         </Paragraph>
@@ -219,43 +214,6 @@ function buildCardView(intent: string, row: WorkRow) {
     href: workType === '입고' ? '/order/inbound' : workType === '출고' ? '/order/outbound' : '/order/incomplete',
     actionLabel: workType === '입고' ? '입고 지시서로 이동' : workType === '출고' ? '출고 지시서로 이동' : '미처리 지시서로 이동',
   };
-}
-
-function intentLabel(intent: string) {
-  const labels: Record<string, string> = {
-    MY_PICKING_TASKS: '오늘 내 작업',
-    PENDING_WORK: '처리할 지시서',
-    INBOUND_STATUS: '입고 확인',
-    OUTBOUND_STATUS: '출고 확인',
-    INVENTORY_LOCATION: '재고 위치',
-    LOW_STOCK: '재고 부족',
-  };
-  return labels[intent] ?? intent;
-}
-
-function intentColor(intent: string) {
-  const colors: Record<string, string> = {
-    MY_PICKING_TASKS: 'blue',
-    PENDING_WORK: 'gold',
-    INBOUND_STATUS: 'green',
-    OUTBOUND_STATUS: 'geekblue',
-    INVENTORY_LOCATION: 'cyan',
-    LOW_STOCK: 'red',
-  };
-  return colors[intent] ?? 'blue';
-}
-
-function resultLabel(intent: string, count: number) {
-  if (count === 0) return '해당 없음';
-  const labels: Record<string, string> = {
-    MY_PICKING_TASKS: `${count}개 작업`,
-    PENDING_WORK: `${count}개 지시서`,
-    INBOUND_STATUS: `${count}개 입고 건`,
-    OUTBOUND_STATUS: `${count}개 출고 건`,
-    INVENTORY_LOCATION: `${count}개 위치`,
-    LOW_STOCK: `${count}개 품목`,
-  };
-  return labels[intent] ?? `${count}건`;
 }
 
 function fallbackSummary(intent: string, rows: WorkRow[]) {
