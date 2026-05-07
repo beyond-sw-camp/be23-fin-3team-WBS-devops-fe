@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Typography, Table, Descriptions, Button, Space, InputNumber, Input, Tag, App, Card, Result,
+  Typography, Table, Descriptions, Button, Space, InputNumber, Input, Tag, App, Card, Result, Popover,
 } from 'antd';
-import { ArrowLeftOutlined, CheckOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CheckOutlined, PlayCircleOutlined, QrcodeOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import OrderQrBadge from '@/components/OrderQrBadge';
 import type { ColumnsType } from 'antd/es/table';
 import type { StockCountItem, StockCountStatus, StockCountItemStatus } from '@/types/inventory';
 import {
@@ -39,6 +40,12 @@ const statusConfig: Record<StockCountStatus, { color: string; label: string }> =
   completed: { color: 'success', label: '완료' },
   cancelled: { color: 'error', label: '취소' },
 };
+
+/** 풀 location_code 에서 끝 3개 세그먼트만 추출 (예: LC-RK-ZN-SEL-POWER-014-PCEL-010-01 → PCEL-010-01) */
+function shortLocationCode(code: string): string {
+  const parts = code.split('-');
+  return parts.length >= 3 ? parts.slice(-3).join('-') : code;
+}
 
 const itemStatusConfig: Record<StockCountItemStatus, { color: string; label: string }> = {
   pending: { color: 'default', label: '대기' },
@@ -192,10 +199,34 @@ export default function StockCountDetailPage() {
   };
 
   const columns: ColumnsType<StockCountItem> = [
-    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 140, render: (v: string) => <span style={{ fontFamily: 'monospace' }}>{v}</span> },
-    { title: '상품명', dataIndex: 'product_name', key: 'product_name' },
-    { title: '로케이션', dataIndex: 'location_code', key: 'location_code', width: 220,
-      render: (v: string) => <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#64748b' }}>{v || '-'}</span> },
+    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 130, render: (v: string) => <span style={{ fontFamily: 'monospace' }}>{v}</span> },
+    { title: '상품명', dataIndex: 'product_name', key: 'product_name', width: 200, ellipsis: true,
+      render: (v: string) => <span title={v}>{v}</span> },
+    { title: '로케이션', dataIndex: 'location_code', key: 'location_code', width: 180,
+      render: (v: string, record) => {
+        if (!v && !record.location_id) return '-';
+        const display = v ? shortLocationCode(v) : '-';
+        const params = new URLSearchParams({
+          wh: detail?.order.warehouse_id ?? '',
+          tab: 'rack-inventory',
+          locationId: record.location_id,
+          ...(v ? { locationCode: v } : {}),
+        });
+        return (
+          <Space size={4} style={{ whiteSpace: 'nowrap' }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#64748b' }} title={v}>{display}</span>
+            <Button
+              type="text"
+              size="small"
+              icon={<EnvironmentOutlined />}
+              title="창고 모니터링에서 이 위치 보기"
+              onClick={() => navigate(`/warehouse/monitoring?${params.toString()}`)}
+              style={{ color: '#1677ff', flexShrink: 0 }}
+            />
+          </Space>
+        );
+      },
+    },
     { title: '시스템수량', dataIndex: 'system_qty', key: 'system_qty', width: 100, align: 'right' },
     {
       title: '실사수량', key: 'count_qty', width: 180, align: 'right',
@@ -260,6 +291,13 @@ export default function StockCountDetailPage() {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/inventory/stock-count')}>목록</Button>
         <Title level={4} style={{ margin: 0 }}>{order.order_no}</Title>
         <Tag color={statusConfig[status]?.color}>{statusConfig[status]?.label ?? status}</Tag>
+        <Popover
+          content={<OrderQrBadge value={`stock-count:${order.id}`} label={order.order_no} title="재고 실사" size={160} />}
+          trigger="click"
+          placement="bottomLeft"
+        >
+          <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b', fontSize: 18 }} />
+        </Popover>
       </Space>
 
       <Card size="small" style={{ marginBottom: 16 }}>
@@ -279,6 +317,7 @@ export default function StockCountDetailPage() {
         size="middle"
         pagination={false}
         loading={isLoading}
+        scroll={{ x: 1180 }}
         rowClassName={(r) => (r.diff_qty !== null && r.diff_qty !== 0 ? 'row-diff' : '')}
       />
 

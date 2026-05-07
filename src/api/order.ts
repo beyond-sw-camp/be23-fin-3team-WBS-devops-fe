@@ -637,6 +637,10 @@ interface BeEtcInOutItemRes {
   condition: string | null; note: string | null;
   defectQty: number | null;
   processedQty: number; status: string;
+  defectLocationId?: string | null;
+  defectLocationCode?: string | null;
+  defaultDefectLocationId?: string | null;
+  defaultDefectLocationCode?: string | null;
   // BE 보강분 — 사람이 읽는 위치 코드
   locationCode?: string | null;
   rackCode?: string | null;
@@ -689,6 +693,10 @@ function mapBeEtcInOutItem(b: BeEtcInOutItemRes): EtcInOutItem {
     defect_qty: b.defectQty ?? 0,
     note: b.note ?? null,
     processed_qty: b.processedQty ?? 0,
+    defect_location_id: b.defectLocationId ?? null,
+    defect_location_code: b.defectLocationCode ?? null,
+    default_defect_location_id: b.defaultDefectLocationId ?? null,
+    default_defect_location_code: b.defaultDefectLocationCode ?? null,
     status: b.status ?? 'pending',
   };
 }
@@ -704,6 +712,9 @@ export interface CreateEtcInOutInput {
     productId: string;
     locationId: string;
     qty: number;
+    processedQty?: number;
+    defectQty?: number;
+    defectLocationId?: string | null;
     lotNo?: string | null;
     condition?: ItemCondition;
     defectReason?: string | null;
@@ -736,7 +747,7 @@ export const getEtcInOutItems = async (id: string): Promise<EtcInOutItem[]> => {
 export const updateEtcInOutItem = async (
   orderId: string,
   itemId: string,
-  payload: { qty: number; defectQty?: number },
+  payload: { qty: number; processedQty?: number; defectQty?: number; defectLocationId?: string | null },
 ): Promise<void> => {
   await apiClient.put(`/stock-service/etc-inout/${orderId}/items/${itemId}`, payload);
 };

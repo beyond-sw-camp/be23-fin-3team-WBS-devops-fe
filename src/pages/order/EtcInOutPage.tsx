@@ -19,7 +19,7 @@ import { getDraftOutboundsDigest, cancelOutboundOrder } from '@/api/order';
 import type { OutboundOrder, OutboundOrderItem } from '@/types/order';
 import type { WorkEventMessage } from '@/types/stomp';
 import { getClientIdFromToken } from '@/utils/jwt';
-import { useMasterWarehouses } from '@/hooks/useWarehouseQuery';
+import { useMasterWarehouses, useZonesByWarehouse } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import { useProducts, useStores } from '@/hooks/useMasterQuery';
 import { getSuggestedLocations, type SuggestedLocation } from '@/api/inventory';
@@ -59,6 +59,12 @@ interface EtcInOutItemRow {
   locationId: string;
   locationLabel: string;
   qty: number;
+  processedQty: number;
+  defectQty: number;
+  defectLocationId?: string;
+  defectLocationLabel?: string;
+  defaultDefectLocationId?: string;
+  defaultDefectLocationLabel?: string;
   maxQty: number | null;
   lotNo?: string;
   condition: ItemCondition;
@@ -72,6 +78,11 @@ interface EtcInOutItemRow {
 
 function isOutboundIoType(ioType: EtcInOutIoType | undefined): boolean {
   return !!ioType && ioType.endsWith('_out');
+}
+
+function isDefectZoneLabel(v: string | undefined): boolean {
+  const text = (v ?? '').trim().toUpperCase();
+  return text.includes('DEFECT') || text.includes('불량');
 }
 
 export default function EtcInOutPage() {
@@ -202,6 +213,7 @@ export default function EtcInOutPage() {
   const isDisposeOut = selectedIoType === 'dispose_out';
   const isDisposeIn = selectedIoType === 'dispose_in';
   const { data: inventoryByRack } = useInventoryByRack(selectedWarehouseId ?? null);
+  const { data: zones = [] } = useZonesByWarehouse(selectedWarehouseId ?? '');
 
   const locationRows = useMemo(() => {
     if (!inventoryByRack) return [];
@@ -217,6 +229,19 @@ export default function EtcInOutPage() {
       }))
     ));
   }, [inventoryByRack]);
+
+  const defectZoneIds = useMemo(
+    () => new Set(zones.filter((z) => z.zone_type === 'DEFECT' && z.is_active !== false).map((z) => z.id)),
+    [zones],
+  );
+
+  const defectLocationOptions = useMemo(() => locationRows
+    .filter((loc) => defectZoneIds.has(loc.zone_id) || isDefectZoneLabel(loc.zone_code) || isDefectZoneLabel(loc.zone_name))
+    .map((loc) => ({
+      value: loc.location_id,
+      label: `${loc.location_code}${loc.product_name ? ` / ${loc.product_name} 보관중` : ' / 불량 보관 가능'}`,
+      loc,
+    })), [defectZoneIds, locationRows]);
 
   /** 출고용 — 상품 단위로 dedupe (창고 내 가용 합계 표시) */
   const outboundProductOptions = useMemo(() => {
@@ -327,6 +352,9 @@ export default function EtcInOutPage() {
     setCancelledOutboundIds([]);
   };
 
+  const getInboundTotalQty = (row: Pick<EtcInOutItemRow, 'processedQty' | 'defectQty' | 'qty'>) =>
+    Math.max(0, (row.processedQty ?? 0) + (row.defectQty ?? 0) || row.qty || 0);
+
   const addItemRow = () => {
     if (!selectedIoType || !selectedWarehouseId) {
       message.warning('유형과 창고를 먼저 선택하세요.');
@@ -340,6 +368,8 @@ export default function EtcInOutPage() {
       locationId: '',
       locationLabel: '',
       qty: 1,
+      processedQty: 1,
+      defectQty: 0,
       maxQty: null,
       condition: 'normal',
     }]);
@@ -370,6 +400,8 @@ export default function EtcInOutPage() {
       locationId: first?.value ?? '',
       locationLabel: first?.loc.location_code ?? '',
       qty: first?.maxQty ?? 1,
+      processedQty: first?.maxQty ?? 1,
+      defectQty: 0,
       maxQty: first?.maxQty ?? null,
       condition: isDisposeOut ? 'defect' : 'normal',
     });
@@ -409,6 +441,8 @@ export default function EtcInOutPage() {
       locationId: '',
       locationLabel: '',
       qty: 1,
+      processedQty: 1,
+      defectQty: 0,
       maxQty: null,
       condition: isDisposeOut ? 'defect' : 'normal',
     };
@@ -492,18 +526,18 @@ export default function EtcInOutPage() {
       productName: product?.name ?? '-',
       sku: product?.sku ?? '-',
     });
-    void fetchSuggestionsForRow(key, productId, row?.qty ?? 1);
+    void fetchSuggestionsForRow(key, productId, row ? Math.max(1, row.processedQty || row.qty || 1) : 1);
   };
 
   /** 수량 변경 시 — 같은 상품/위치의 가용량 초과 검사 + 필요 시 재추천 */
-  const handleInboundQtyChange = (key: number, newQty: number) => {
+  const handleInboundProcessedQtyChange = (key: number, newQty: number) => {
     const row = itemRows.find((r) => r.key === key);
     if (!row) return;
-    updateItemRow(key, { qty: newQty });
+    const processedQty = Math.max(0, newQty);
+    updateItemRow(key, { processedQty, qty: processedQty + (row.defectQty ?? 0) });
     if (!row.productId) return;
-    // 가용량 정보가 있으면 우선 클라이언트 검사
-    if (row.availableCapacity != null && newQty > row.availableCapacity && row.suggestions) {
-      showCapacityOverflowModal(key, newQty, row.suggestions);
+    if (row.availableCapacity != null && processedQty > row.availableCapacity && row.suggestions) {
+      showCapacityOverflowModal(key, processedQty, row.suggestions);
     }
   };
 
@@ -593,13 +627,36 @@ export default function EtcInOutPage() {
     });
   };
 
+  useEffect(() => {
+    if (isOutbound || defectLocationOptions.length === 0) return;
+    const first = defectLocationOptions[0];
+    const fallbackId = first.value;
+    const fallbackLabel = first.loc.location_code;
+    setItemRows((prev) => prev.map((row) => {
+      if ((row.defectQty ?? 0) < 1) return row;
+      if (row.defectLocationId && row.defaultDefectLocationId) return row;
+      return {
+        ...row,
+        defectLocationId: row.defectLocationId || row.defaultDefectLocationId || fallbackId,
+        defectLocationLabel: row.defectLocationLabel || row.defaultDefectLocationLabel || fallbackLabel,
+        defaultDefectLocationId: row.defaultDefectLocationId || fallbackId,
+        defaultDefectLocationLabel: row.defaultDefectLocationLabel || fallbackLabel,
+      };
+    }));
+  }, [defectLocationOptions, isOutbound]);
+
   const handleCreate = () => {
     form.validateFields().then((values) => {
       if (itemRows.length === 0) {
         message.warning('품목을 하나 이상 추가해주세요.');
         return;
       }
-      const invalidRow = itemRows.find((row) => !row.productId || !row.locationId || row.qty < 1);
+      const invalidRow = itemRows.find((row) =>
+        !row.productId
+        || !row.locationId
+        || (isOutbound ? row.qty < 1 : getInboundTotalQty(row) < 1)
+        || (!isOutbound && (row.defectQty ?? 0) > 0 && !row.defectLocationId)
+      );
       if (invalidRow) {
         message.warning('모든 품목의 상품/위치/수량을 입력하세요.');
         return;
@@ -642,7 +699,10 @@ export default function EtcInOutPage() {
           items: itemRows.map((row) => ({
             productId: row.productId,
             locationId: row.locationId,
-            qty: row.qty,
+            qty: isOutbound ? row.qty : getInboundTotalQty(row),
+            processedQty: isOutbound ? undefined : row.processedQty,
+            defectQty: isOutbound ? undefined : row.defectQty,
+            defectLocationId: isOutbound || (row.defectQty ?? 0) < 1 ? null : (row.defectLocationId || null),
             lotNo: row.lotNo || null,
             condition: row.condition,
             // 정상이면 null, 불량이면 입력값 (백엔드 가이드: 누락되면 null 저장)
@@ -862,15 +922,21 @@ export default function EtcInOutPage() {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
             <InputNumber
-              min={1}
+              min={isOutbound ? 1 : 0}
               max={isOutbound ? (row.maxQty ?? undefined) : undefined}
-              value={row.qty}
+              value={isOutbound ? row.qty : row.processedQty}
               status={shortage > 0 ? 'error' : undefined}
+              addonBefore={isOutbound ? undefined : '정상'}
               onChange={(value) => isOutbound
                 ? updateItemRow(row.key, { qty: Number(value ?? 1) })
-                : handleInboundQtyChange(row.key, Number(value ?? 1))}
+                : handleInboundProcessedQtyChange(row.key, Number(value ?? 0))}
               style={{ width: '100%' }}
             />
+            {!isOutbound && (
+              <span style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.2 }}>
+                총 {getInboundTotalQty(row)}개
+              </span>
+            )}
             {isOutbound && row.productId && (
               shortage > 0 ? (
                 <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 600, lineHeight: 1.2 }}>
@@ -909,7 +975,7 @@ export default function EtcInOutPage() {
           style: { cursor: 'pointer' },
         })} />
 
-      <Modal title={`${pageTitle} 추가`} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleCreate} confirmLoading={createMutation.isPending} okText="생성" width={900}>
+      <Modal title={pageTitle} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleCreate} confirmLoading={createMutation.isPending} okText="생성" width={900}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="ioType" label="사유" rules={[{ required: true }]}>
             <Select

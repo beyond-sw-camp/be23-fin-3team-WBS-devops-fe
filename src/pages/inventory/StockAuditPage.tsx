@@ -166,7 +166,7 @@ export default function StockAuditPage() {
 
   const columns: ColumnsType<StockCountOrder> = [
     { title: '지시서번호', dataIndex: 'order_no', key: 'order_no', width: 180 },
-    { title: '창고', dataIndex: 'warehouse_name', key: 'warehouse_name', width: 160 },
+    { title: '창고', dataIndex: 'warehouse_name', key: 'warehouse_name', width: 280, ellipsis: true, render: (v) => <span title={v} style={{ whiteSpace: 'nowrap' }}>{v}</span> },
     {
       title: '상태', dataIndex: 'status', key: 'status', width: 100, align: 'center',
       render: (v: StockCountStatus) => <Tag color={statusConfig[v]?.color}>{statusConfig[v]?.label ?? v}</Tag>,

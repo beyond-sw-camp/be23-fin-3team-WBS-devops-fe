@@ -308,6 +308,10 @@ export interface EtcInOutItem {
   picked_qty?: number;
   note: string | null;
   processed_qty: number;
+  defect_location_id?: string | null;
+  defect_location_code?: string | null;
+  default_defect_location_id?: string | null;
+  default_defect_location_code?: string | null;
   status: string;
 }
 

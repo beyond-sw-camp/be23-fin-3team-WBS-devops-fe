@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Typography, Table, Card, Descriptions, Steps, Button, Space, Tag, App, Result, Spin,
-  Row, Col, Popover, Modal, InputNumber, Input, Form,
+  Row, Col, Popover, Modal, InputNumber, Input, Form, Select,
 } from 'antd';
 import {
   ArrowLeftOutlined, CheckOutlined, CloseCircleOutlined, QrcodeOutlined,
   InboxOutlined, CheckCircleOutlined, ClockCircleOutlined, WarningOutlined,
+  EnvironmentOutlined,
 } from '@ant-design/icons';
 import OrderQrBadge from '@/components/OrderQrBadge';
 import type { ColumnsType } from 'antd/es/table';
@@ -24,6 +25,8 @@ import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
 import { extractApiErrorMessage } from '@/utils/apiError';
 import dayjs from 'dayjs';
+import { useInventoryByRack } from '@/hooks/useInventoryQuery';
+import { useZonesByWarehouse } from '@/hooks/useWarehouseQuery';
 
 /** ISO datetime → '2026-05-04 23:26' (분까지) */
 const fmtDateTime = (v: string | null | undefined): string => {
@@ -86,6 +89,17 @@ const statIcon = (color: string): React.CSSProperties => ({
   fontSize: 18, color, background: `${color}14`, border: `1px solid ${color}22`,
 });
 
+function isDefectZoneLabel(v: string | undefined): boolean {
+  const text = (v ?? '').trim().toUpperCase();
+  return text.includes('DEFECT') || text.includes('불량');
+}
+
+/** 풀 location_code 에서 끝 3개 세그먼트만 추출 (예: LC-RK-ZN-SEL-POWER-014-PCEL-010-01 → PCEL-010-01) */
+function shortLocationCode(code: string): string {
+  const parts = code.split('-');
+  return parts.length >= 3 ? parts.slice(-3).join('-') : code;
+}
+
 export default function EtcInOutDetailPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = id ?? '';
@@ -95,6 +109,8 @@ export default function EtcInOutDetailPage() {
 
   const { data: order, isLoading } = useEtcInOutDetail(orderId);
   const { data: items = [], isLoading: itemsLoading } = useEtcInOutItems(orderId);
+  const { data: inventoryByRack } = useInventoryByRack(order?.warehouse_id ?? null);
+  const { data: zones = [] } = useZonesByWarehouse(order?.warehouse_id ?? '');
   const approveMutation = useApproveEtcInOut();
   const completeMutation = useCompleteEtcInOut();
   const cancelMutation = useCancelEtcInOut();
@@ -128,7 +144,18 @@ export default function EtcInOutDetailPage() {
 
   /** 직접 완료 모달 — 정상/불량 수량 입력 */
   const [receiveOpen, setReceiveOpen] = useState(false);
-  const [receiveRows, setReceiveRows] = useState<{ item_id: string; sku: string; product_name: string; ordered_qty: number; qty: number; defective: number }[]>([]);
+  const [receiveRows, setReceiveRows] = useState<{
+    item_id: string;
+    sku: string;
+    product_name: string;
+    ordered_qty: number;
+    qty: number;
+    defective: number;
+    defectLocationId?: string;
+    defectLocationCode?: string;
+    defaultDefectLocationId?: string;
+    defaultDefectLocationCode?: string;
+  }[]>([]);
   const [completeSubmitting, setCompleteSubmitting] = useState(false);
 
   // STOMP — 팀원 패턴: 로그인한 운영자 본인의 work-event 채널 (toast 알림용)
@@ -165,6 +192,48 @@ export default function EtcInOutDetailPage() {
     const pending = items.filter((i) => i.status === 'pending').length;
     return { total, done, shortage, pending };
   }, [items]);
+
+  const locationRows = useMemo(() => {
+    if (!inventoryByRack) return [];
+    return inventoryByRack.racks.flatMap((rack) => (
+      rack.locations.map((loc) => ({
+        ...loc,
+        rack_id: rack.rack_id,
+        rack_code: rack.rack_code,
+        zone_id: rack.zone_id,
+        zone_code: rack.zone_code,
+        zone_name: rack.zone_name,
+      }))
+    ));
+  }, [inventoryByRack]);
+
+  const defectZoneIds = useMemo(
+    () => new Set(zones.filter((z) => z.zone_type === 'DEFECT' && z.is_active !== false).map((z) => z.id)),
+    [zones],
+  );
+
+  const defectLocationOptions = useMemo(() => locationRows
+    .filter((loc) => defectZoneIds.has(loc.zone_id) || isDefectZoneLabel(loc.zone_code) || isDefectZoneLabel(loc.zone_name))
+    .map((loc) => ({
+      value: loc.location_id,
+      label: loc.location_code,
+    })), [defectZoneIds, locationRows]);
+
+  useEffect(() => {
+    if (!receiveOpen || defectLocationOptions.length === 0) return;
+    const fallback = defectLocationOptions[0];
+    setReceiveRows((prev) => prev.map((row) => (
+      row.defective > 0 && !row.defectLocationId
+        ? {
+          ...row,
+          defectLocationId: row.defaultDefectLocationId || fallback.value,
+          defectLocationCode: row.defaultDefectLocationCode || fallback.label,
+          defaultDefectLocationId: row.defaultDefectLocationId || fallback.value,
+          defaultDefectLocationCode: row.defaultDefectLocationCode || fallback.label,
+        }
+        : row
+    )));
+  }, [defectLocationOptions, receiveOpen]);
 
   if (isLoading || itemsLoading) {
     return <Spin size="large" style={{ display: 'block', margin: '120px auto' }} />;
@@ -286,6 +355,7 @@ export default function EtcInOutDetailPage() {
 
   /** 직접 완료 모달 열기 — 입고와 동일한 정상/불량 수량 검수 입력 */
   const openReceive = () => {
+    const fallback = defectLocationOptions[0];
     setReceiveRows(items.map((i) => ({
       item_id: i.id,
       sku: '-', // EtcInOutItem에 sku 필드 없음 — product_name만 표기
@@ -293,6 +363,10 @@ export default function EtcInOutDetailPage() {
       ordered_qty: i.qty,
       qty: i.qty - (i.defect_qty ?? 0), // 정상 수량 기본값
       defective: i.defect_qty ?? 0,
+      defectLocationId: i.defect_location_id ?? i.default_defect_location_id ?? fallback?.value,
+      defectLocationCode: i.defect_location_code ?? i.default_defect_location_code ?? fallback?.label,
+      defaultDefectLocationId: i.default_defect_location_id ?? fallback?.value,
+      defaultDefectLocationCode: i.default_defect_location_code ?? fallback?.label,
     })));
     setReceiveOpen(true);
   };
@@ -305,15 +379,28 @@ export default function EtcInOutDetailPage() {
       message.warning(`${invalid.product_name}: 불량 수량은 총 수량을 넘을 수 없습니다.`);
       return;
     }
+    const invalidDefectLocation = receiveRows.find((r) => r.defective > 0 && !r.defectLocationId);
+    if (invalidDefectLocation) {
+      message.warning(`${invalidDefectLocation.product_name}: 불량 로케이션을 선택해주세요.`);
+      return;
+    }
     setCompleteSubmitting(true);
     try {
       // 1. 각 품목 정상/불량 수량 갱신 (변경된 행만)
       for (const r of receiveRows) {
         const original = items.find((i) => i.id === r.item_id);
         const totalQty = r.qty + r.defective;
-        const changed = !original || original.qty !== totalQty || (original.defect_qty ?? 0) !== r.defective;
+        const changed = !original
+          || original.qty !== totalQty
+          || (original.defect_qty ?? 0) !== r.defective
+          || (original.defect_location_id ?? null) !== (r.defective > 0 ? (r.defectLocationId || null) : null);
         if (changed) {
-          await updateEtcInOutItem(orderId, r.item_id, { qty: totalQty, defectQty: r.defective });
+          await updateEtcInOutItem(orderId, r.item_id, {
+            qty: totalQty,
+            processedQty: r.qty,
+            defectQty: r.defective,
+            defectLocationId: r.defective > 0 ? (r.defectLocationId || null) : null,
+          });
         }
       }
       // 2. 완료 처리
@@ -348,7 +435,30 @@ export default function EtcInOutDetailPage() {
     { title: '상품', key: 'product', render: (_, r) => r.product_name || r.product_id },
     {
       title: '위치', key: 'location', width: 200,
-      render: (_, r) => r.location_code ?? r.location_id.slice(0, 12),
+      render: (_, r) => {
+        const fullCode = r.location_code ?? r.location_id.slice(0, 12);
+        const display = r.location_code ? shortLocationCode(r.location_code) : fullCode;
+        const params = new URLSearchParams({
+          wh: order.warehouse_id,
+          tab: 'rack-inventory',
+          locationId: r.location_id,
+          ...(r.location_code ? { locationCode: r.location_code } : {}),
+          ...(r.rack_code ? { rackCode: r.rack_code } : {}),
+        });
+        return (
+          <Space size={4} style={{ whiteSpace: 'nowrap' }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 12 }} title={fullCode}>{display}</span>
+            <Button
+              type="text"
+              size="small"
+              icon={<EnvironmentOutlined />}
+              title="창고 모니터링에서 이 위치 보기"
+              onClick={() => navigate(`/warehouse/monitoring?${params.toString()}`)}
+              style={{ color: '#1677ff', flexShrink: 0 }}
+            />
+          </Space>
+        );
+      },
     },
     { title: '지시수량', dataIndex: 'qty', key: 'qty', width: 90, align: 'right', render: (v: number) => v.toLocaleString() },
     {
@@ -566,6 +676,51 @@ export default function EtcInOutDetailPage() {
         <div style={{ marginTop: 12, fontSize: 12, color: '#64748b' }}>
           * 정상수량 + 불량수량 = 처리할 총 수량. 둘 다 0이면 해당 품목은 처리되지 않음.
         </div>
+        {!isDispose && receiveRows.length > 0 && (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Typography.Text strong style={{ fontSize: 13 }}>불량 로케이션</Typography.Text>
+            {receiveRows.map((row, index) => (
+              <div
+                key={`receive-defect-${row.item_id}`}
+                style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, background: '#f8fafc' }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 10 }}>
+                  {index + 1}. {row.product_name}
+                </div>
+                {(row.defective ?? 0) > 0 ? (
+                  <>
+                    <Select
+                      placeholder="불량 로케이션 선택"
+                      value={row.defectLocationId || undefined}
+                      options={defectLocationOptions}
+                      onChange={(value: string, option?: { label?: ReactNode } | { label?: ReactNode }[]) => setReceiveRows((prev) => prev.map((r) => (
+                        r.item_id === row.item_id
+                          ? {
+                            ...r,
+                            defectLocationId: value,
+                            defectLocationCode: !Array.isArray(option) && option?.label != null ? String(option.label) : value,
+                          }
+                          : r
+                      )))}
+                      showSearch
+                      optionFilterProp="label"
+                      status={!row.defectLocationId ? 'error' : undefined}
+                    />
+                    {row.defaultDefectLocationCode && (
+                      <div style={{ marginTop: 8, fontSize: 11, color: '#64748b' }}>
+                        기본값: {row.defaultDefectLocationCode}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                    불량 수량이 1개 이상이면 선택합니다.
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
 
       {/* 입고 요청 메일 작성 — 백엔드 SMTP 자동 발송 */}
