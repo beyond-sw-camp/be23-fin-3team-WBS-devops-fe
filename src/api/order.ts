@@ -45,6 +45,7 @@ interface BeOutboundOrderDetailRes extends BeOutboundOrderRes {
   items: BeOutboundOrderItemRes[];
   pickingListIds?: string[] | null;
   sourceSalesOrderIds?: string[] | null;
+  sourceSalesOrderNos?: string[] | null;
 }
 interface BePage<T> { content: T[]; totalElements?: number; totalPages?: number }
 interface BeErpSalesOrderRes {
@@ -141,6 +142,7 @@ function mapBeOutboundDetail(b: BeOutboundOrderDetailRes): OutboundOrder {
     total_items: b.items?.length ?? 0,
     picking_list_ids: b.pickingListIds ?? [],
     source_sales_order_ids: b.sourceSalesOrderIds ?? [],
+    source_sales_order_nos: b.sourceSalesOrderNos ?? [],
   };
 }
 
@@ -374,6 +376,8 @@ interface BeOutboundDispatchRes {
   dispatchedAt: string | null;
   createdAt: string | null;
   items: BeOutboundDispatchItemRes[];
+  originType?: string | null;
+  originRefs?: { id: string; no: string }[] | null;
 }
 function mapBeOutboundDispatchItem(b: BeOutboundDispatchItemRes): OutboundDispatchItem {
   return {
@@ -399,6 +403,8 @@ function mapBeOutboundDispatch(b: BeOutboundDispatchRes): OutboundDispatch {
     dispatched_at: b.dispatchedAt ?? '',
     created_at: b.createdAt,
     items: (b.items ?? []).map(mapBeOutboundDispatchItem),
+    origin_type: b.originType ?? null,
+    origin_refs: b.originRefs ?? [],
   };
 }
 export const getOutboundDispatch = async (orderId: string): Promise<OutboundDispatch> => {

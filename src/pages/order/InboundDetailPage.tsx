@@ -146,19 +146,6 @@ export default function InboundDetailPage() {
     onBeforePrint: () => new Promise<void>((resolve) => { requestAnimationFrame(() => requestAnimationFrame(() => resolve())); }),
     onPrintError: (_loc, err) => { message.error(err?.message || '인쇄를 시작할 수 없습니다.'); },
   });
-  const handleReceiptPrint = useReactToPrint({
-    contentRef: receiptPrintRef,
-    documentTitle: () => `입고전표_${receipt?.receipt_no ?? order?.order_no ?? id}`,
-    pageStyle: `
-      @page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }
-      @media print {
-        body { margin: 0 !important; padding: 0 !important; color: #000 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      }
-    `,
-    onBeforePrint: () => new Promise<void>((resolve) => { requestAnimationFrame(() => requestAnimationFrame(() => resolve())); }),
-    onPrintError: (_loc, err) => { message.error(err?.message || '입고 전표 인쇄를 시작할 수 없습니다.'); },
-  });
-
   const status: OrderStatus = order?.status ?? 'draft';
   const userMap = useUserNameMap();
   const resolveUser = (id: string | null | undefined) => resolveUserName(userMap, id);
@@ -380,19 +367,6 @@ export default function InboundDetailPage() {
                         void handlePrint();
                       },
                     },
-                    {
-                      key: 'receipt',
-                      icon: <PrinterOutlined />,
-                      label: '입고 전표 출력',
-                      disabled: !receiptEnabled,
-                      onClick: () => {
-                        if (!receipt || !receiptPrintRef.current) {
-                          message.warning('입고 전표가 아직 조회되지 않았습니다. 잠시 후 다시 시도해 주세요.');
-                          return;
-                        }
-                        void handleReceiptPrint();
-                      },
-                    },
                   ],
                 }}
               >
@@ -463,13 +437,19 @@ export default function InboundDetailPage() {
             <Descriptions.Item label="창고">{order.warehouse_name}</Descriptions.Item>
             <Descriptions.Item label="입고예정일">{order.expected_date}</Descriptions.Item>
             <Descriptions.Item label="출처">
-              {order.source === 'return'
-                ? <Tag color="volcano">반품</Tag>
-                : order.source === 'purchase_order'
-                  ? <Tag color="blue">발주서</Tag>
-                  : order.source === 'manual'
-                    ? <Tag>수동 등록</Tag>
-                    : (order.source || '-')}
+              {order.source === 'return' ? (
+                <Space size={6}>
+                  <Tag color="volcano" style={{ margin: 0 }}>반품</Tag>
+                  {order.origin_no && <Text strong>{order.origin_no}</Text>}
+                </Space>
+              ) : order.source === 'purchase_order' ? (
+                <Space size={6}>
+                  <Tag color="blue" style={{ margin: 0 }}>발주서</Tag>
+                  {order.origin_no && <Text strong>{order.origin_no}</Text>}
+                </Space>
+              ) : order.source === 'manual' ? (
+                <Tag>수동 등록</Tag>
+              ) : (order.source || '-')}
             </Descriptions.Item>
             <Descriptions.Item label="생성자">{resolveUser(order.created_by)}</Descriptions.Item>
             <Descriptions.Item label="승인자">{resolveUser(order.approved_by)}</Descriptions.Item>
@@ -556,6 +536,15 @@ export default function InboundDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>
                 검수 결과 — {receipt.receipt_no}
+              </span>
+              <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                입고지시서 {order.order_no}
+                {order.source === 'purchase_order' && order.origin_no && (
+                  <> · 발주서 {order.origin_no}</>
+                )}
+                {order.source === 'return' && order.origin_no && (
+                  <> · 원본 출고지시서 {order.origin_no}</>
+                )}
               </span>
               <div style={{ height: 1, background: '#e2e8f0', flex: 1 }} />
             </div>
@@ -722,6 +711,12 @@ export default function InboundDetailPage() {
             { label: '입고처', value: order.vendor_name }, { label: '창고', value: order.warehouse_name },
             { label: '입고예정일', value: order.expected_date }, { label: '상태', value: ORDER_STATUS_CONFIG[status]?.label ?? status },
             { label: '출처', value: order.source === 'return' ? '반품' : order.source === 'purchase_order' ? '발주서' : order.source === 'manual' ? '수동 등록' : (order.source || '-') },
+            ...(order.source === 'purchase_order' && order.origin_no
+              ? [{ label: '발주서 번호', value: order.origin_no }]
+              : []),
+            ...(order.source === 'return' && order.origin_no
+              ? [{ label: '원본 출고지시서', value: order.origin_no }]
+              : []),
             { label: '생성자', value: resolveUser(order.created_by) },
             { label: '승인자', value: resolveUser(order.approved_by) },
           ]}
@@ -749,6 +744,12 @@ export default function InboundDetailPage() {
             documentOperator={receipt.received_by_name || resolveUser(receipt.received_by)}
             info={[
               { label: '원 지시서', value: receipt.order_no },
+              ...(order.source === 'purchase_order' && order.origin_no
+                ? [{ label: '발주서 번호', value: order.origin_no }]
+                : []),
+              ...(order.source === 'return' && order.origin_no
+                ? [{ label: '원본 출고지시서', value: order.origin_no }]
+                : []),
               { label: '입고처', value: receipt.vendor_name },
               { label: '창고', value: receipt.warehouse_name },
               { label: '입고일시', value: receipt.received_at ? dayjs(receipt.received_at).format('YYYY-MM-DD HH:mm') : '-' },

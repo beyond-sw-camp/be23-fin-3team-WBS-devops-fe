@@ -63,8 +63,10 @@ export interface InboundOrder {
   expected_date: string;
   status: OrderStatus;
   source: string;
-  /** 원본 문서 ID — ASN이면 발주서ID, 반품이면 출고지시서ID, 수동이면 null */
+  /** 원본 문서 ID — purchase_order 면 발주서ID, return 이면 출고지시서ID, manual 이면 null */
   origin_id?: string | null;
+  /** 원본 문서 번호 — purchase_order 면 PO-XXX, return 이면 출고지시서 번호, manual 이면 null. 상세 응답에만 채워짐 */
+  origin_no?: string | null;
   /** 반품 출고처명 — source=return 일 때만 값 있음 */
   return_from?: string | null;
   created_by: string;
@@ -147,6 +149,10 @@ export interface OutboundDispatch {
   dispatched_at: string;
   created_at?: string | null;
   items: OutboundDispatchItem[];
+  /** 출처 유형 — 'sales_order' | 'manual' | 'return' */
+  origin_type?: string | null;
+  /** 출처 수주서들 (sales_order 케이스 — 분할 출고 시 N개 가능). manual/return 은 빈 배열 */
+  origin_refs?: { id: string; no: string }[];
 }
 
 /* ── 적치 지시서 ── */
@@ -217,6 +223,8 @@ export interface OutboundOrder {
   picking_list_ids?: string[];
   /** 이 출고지시서가 만들어진 원본 ERP 수주서 ID 목록 (활성 링크만, 중복 제거) */
   source_sales_order_ids?: string[];
+  /** 위 ID 들의 수주서 번호(SO-XXX) — 같은 순서로 매핑. 화면/인쇄에서 노출용 */
+  source_sales_order_nos?: string[];
 
   /* ── 반품 출고 식별 (BE: originType='return' 일 때만 채워짐) ── */
   /** 'sales_order' | 'manual' | 'return' — BE 가 명시적으로 내려주는 발주 출처 */

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Typography, Table, Space, Tag, Modal, Alert, App, Select, Tabs, Badge, Button, Form, DatePicker, InputNumber, Input, Segmented, Progress } from 'antd';
-import { CloudDownloadOutlined, PlusOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FileDoneOutlined, LineChartOutlined } from '@ant-design/icons';
+import { Typography, Table, Space, Tag, Modal, Alert, App, Select, Tabs, Badge, Button, Form, DatePicker, InputNumber, Input, Segmented, Progress, Card } from 'antd';
+import { CloudDownloadOutlined, PlusOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FileDoneOutlined, LineChartOutlined, CalendarOutlined } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
@@ -530,10 +530,6 @@ export default function InboundListPage() {
           <Text type="secondary" style={{ fontSize: 12 }}>발주서 기반 입고 지시서 생성</Text>
         </Space>
         <Space>
-          <ProductFilterTriggerButton
-            {...productFilter}
-            matchedProductCount={productFilter.productIds?.length ?? null}
-          />
           <PermissionButton resource="INBOUND" action="CREATE" icon={<PlusOutlined />} onClick={() => openManualModal()}>
             수동 생성
           </PermissionButton>
@@ -543,17 +539,7 @@ export default function InboundListPage() {
         </Space>
       </div>
 
-      {productFilter.isFiltering && (
-        <div style={{ marginBottom: 12 }}>
-          <ProductFilterStatusBar
-            {...productFilter}
-            matchedProductCount={productFilter.productIds?.length ?? null}
-            filteredLineCount={allOrders.length}
-          />
-        </div>
-      )}
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ marginBottom: 12 }}>
         <Segmented
           value={viewMode}
           onChange={(v) => {
@@ -572,55 +558,100 @@ export default function InboundListPage() {
             { label: <Space size={6}><LineChartOutlined />발주서 목록</Space>, value: 'po' },
           ]}
         />
-        <Space size={8} wrap>
-          <Input
-            placeholder={viewMode === 'orders' ? '지시서번호 또는 입고처명' : '발주번호 또는 입고처명'}
-            prefix={<SearchOutlined />}
-            value={searchKeyword}
-            onChange={(e) => { setSearchKeyword(e.target.value); setPoPage(0); }}
-            allowClear
-            style={{ width: 240 }}
-          />
-          {viewMode === 'orders' && (
-            <Select
-              value={orderStatusFilter}
-              onChange={(v) => setOrderStatusFilter(v)}
-              style={{ width: 130 }}
-              options={[
-                { label: '전체 상태', value: 'ALL' },
-                { label: '초안', value: 'draft' },
-                { label: '승인', value: 'approved' },
-                { label: '검수', value: 'received' },
-                { label: '적치중', value: 'placing' },
-                { label: '진행중', value: 'in_progress' },
-                { label: '완료', value: 'completed' },
-                { label: '부분', value: 'partial' },
-                { label: '취소', value: 'cancelled' },
-              ]}
-            />
-          )}
-          {viewMode === 'po' && (
-            <Select
-              value={poStatusFilter}
-              onChange={(v) => { setPoStatusFilter(v); setPoPage(0); }}
-              style={{ width: 130 }}
-              options={[
-                { label: '전체 상태', value: 'ALL' },
-                { label: '미처리', value: 'NOT_STARTED' },
-                { label: '진행중', value: 'IN_PROGRESS' },
-                { label: '완료', value: 'COMPLETED' },
-              ]}
-            />
-          )}
-          <Space size={4}>
-            <Text type="secondary" style={{ fontSize: 12 }}>입고예정일</Text>
-            <DatePicker value={dateFrom} onChange={(d) => { setDateFrom(d); setPoPage(0); }} placeholder="시작" style={{ width: 130 }} />
-            <Text type="secondary">~</Text>
-            <DatePicker value={dateTo} onChange={(d) => { setDateTo(d); setPoPage(0); }} placeholder="종료" style={{ width: 130 }} />
-          </Space>
-          <Button icon={<ReloadOutlined />} onClick={resetFilters}>초기화</Button>
-        </Space>
       </div>
+
+      <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '18px 20px' } }}>
+        <Text strong style={{ display: 'block', fontSize: 14, marginBottom: 12 }}>검색 조건</Text>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            columnGap: 24,
+            rowGap: 10,
+          }}
+        >
+          <Space size={8} align="center">
+            <SearchOutlined style={{ color: '#64748b' }} />
+            <Text strong style={{ fontSize: 13, whiteSpace: 'nowrap' }}>검색어</Text>
+            <Input
+              placeholder={viewMode === 'orders' ? '지시서번호 또는 입고처명' : '발주번호 또는 입고처명'}
+              value={searchKeyword}
+              onChange={(e) => { setSearchKeyword(e.target.value); setPoPage(0); }}
+              allowClear
+              style={{ width: 240 }}
+            />
+          </Space>
+          <Space size={8} align="center">
+            <Text strong style={{ fontSize: 13, whiteSpace: 'nowrap' }}>상태</Text>
+            {viewMode === 'orders' ? (
+              <Select
+                value={orderStatusFilter}
+                onChange={(v) => setOrderStatusFilter(v)}
+                style={{ width: 140 }}
+                options={[
+                  { label: '전체 상태', value: 'ALL' },
+                  { label: '초안', value: 'draft' },
+                  { label: '승인', value: 'approved' },
+                  { label: '검수', value: 'received' },
+                  { label: '적치중', value: 'placing' },
+                  { label: '진행중', value: 'in_progress' },
+                  { label: '완료', value: 'completed' },
+                  { label: '부분', value: 'partial' },
+                  { label: '취소', value: 'cancelled' },
+                ]}
+              />
+            ) : (
+              <Select
+                value={poStatusFilter}
+                onChange={(v) => { setPoStatusFilter(v); setPoPage(0); }}
+                style={{ width: 140 }}
+                options={[
+                  { label: '전체 상태', value: 'ALL' },
+                  { label: '미처리', value: 'NOT_STARTED' },
+                  { label: '진행중', value: 'IN_PROGRESS' },
+                  { label: '완료', value: 'COMPLETED' },
+                ]}
+              />
+            )}
+          </Space>
+          <Space size={8} align="center">
+            <CalendarOutlined style={{ color: '#64748b' }} />
+            <Text strong style={{ fontSize: 13, whiteSpace: 'nowrap' }}>입고예정일</Text>
+            <DatePicker value={dateFrom} onChange={(d) => { setDateFrom(d); setPoPage(0); }} placeholder="시작" style={{ width: 140 }} />
+            <Text type="secondary">~</Text>
+            <DatePicker value={dateTo} onChange={(d) => { setDateTo(d); setPoPage(0); }} placeholder="종료" style={{ width: 140 }} />
+          </Space>
+          <div style={{ marginLeft: 'auto' }}>
+            <Space size={8}>
+              <ProductFilterTriggerButton
+                {...productFilter}
+                matchedProductCount={productFilter.productIds?.length ?? null}
+              />
+              <Button icon={<ReloadOutlined />} onClick={resetFilters}>초기화</Button>
+            </Space>
+          </div>
+        </div>
+        {productFilter.isFiltering && (
+          <div
+            style={{
+              marginTop: 12,
+              paddingTop: 12,
+              borderTop: '1px dashed #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            <ProductFilterStatusBar
+              {...productFilter}
+              matchedProductCount={productFilter.productIds?.length ?? null}
+              filteredLineCount={allOrders.length}
+            />
+          </div>
+        )}
+      </Card>
 
       {viewMode === 'orders' && (
         <>

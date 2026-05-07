@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Table, Tag, Select, Space, Empty } from 'antd';
-import { BellOutlined } from '@ant-design/icons';
+import { Typography, Table, Tag, Select, Empty, Card } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useAuditLogs } from '@/hooks/useCommonQuery';
 import type { AuditLog } from '@/types/common';
@@ -18,14 +17,15 @@ const { Title, Text } = Typography;
  * 일반 운영 이력(승인/완료/취소...)은 [감사 로그] 페이지에서 담당. 역할 분리.
  */
 
-const ALERT_ACTIONS = ['출고불가발생', '출고불가해소', '재고부족발생', '재고부족해소'] as const;
+const ALERT_ACTIONS = ['출고불가발생', '출고불가부분해소', '출고불가해소', '재고부족발생', '재고부족해소'] as const;
 type AlertAction = (typeof ALERT_ACTIONS)[number];
 
 const ACTION_CONFIG: Record<AlertAction, { color: string; label: string }> = {
-  '출고불가발생':  { color: 'red',     label: '출고불가' },
-  '출고불가해소':  { color: 'green',   label: '출고불가 해소' },
-  '재고부족발생':  { color: 'volcano', label: '재고부족' },
-  '재고부족해소':  { color: 'cyan',    label: '재고부족 해소' },
+  '출고불가발생':     { color: 'red',     label: '출고불가' },
+  '출고불가부분해소': { color: 'gold',    label: '출고불가 부분해소' },
+  '출고불가해소':     { color: 'green',   label: '출고불가 해소' },
+  '재고부족발생':     { color: 'volcano', label: '재고부족' },
+  '재고부족해소':     { color: 'cyan',    label: '재고부족 해소' },
 };
 
 interface AlertRow {
@@ -52,16 +52,21 @@ function toAlertRow(log: AuditLog): AlertRow | null {
     }
   }
 
-  if (action === '출고불가발생' || action === '출고불가해소') {
+  if (action === '출고불가발생' || action === '출고불가부분해소' || action === '출고불가해소') {
     const soNo = (payload.soNo as string) ?? '';
     const storeName = (payload.storeName as string) ?? '';
     const items = (payload.items as Array<{ productName?: string; shortageQty?: number }>) ?? [];
     const head = items[0];
     const more = items.length > 1 ? ` 외 ${items.length - 1}건` : '';
     const title = `${ACTION_CONFIG[action].label}: ${soNo || '-'}`;
-    const content = action === '출고불가발생'
-      ? (head ? `${head.productName ?? ''} ${head.shortageQty ?? 0}개 부족${more}` : '재고 부족 발생')
-      : `${storeName || '-'} — 재고 부족 해소`;
+    let content: string;
+    if (action === '출고불가해소') {
+      content = `${storeName || '-'} — 재고 부족 해소`;
+    } else if (action === '출고불가부분해소') {
+      content = head ? `${head.productName ?? ''} ${head.shortageQty ?? 0}개 잔여${more}` : '부족 수량 갱신';
+    } else {
+      content = head ? `${head.productName ?? ''} ${head.shortageQty ?? 0}개 부족${more}` : '재고 부족 발생';
+    }
     const salesOrderId = payload.salesOrderId as string | undefined;
     return {
       id: log.id,
@@ -128,7 +133,7 @@ export default function NotificationPage() {
     },
     {
       title: '제목', dataIndex: 'title', key: 'title', width: 280,
-      render: (v: string) => <Text strong>{v}</Text>,
+      render: (v: string) => <Text style={{ fontWeight: 500 }}>{v}</Text>,
     },
     { title: '내용', dataIndex: 'content', key: 'content', ellipsis: true },
     {
@@ -138,7 +143,7 @@ export default function NotificationPage() {
     {
       title: '일시', dataIndex: 'created_at', key: 'created_at', width: 160,
       render: (v: string) => (
-        <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12 }}>
+        <span style={{ fontSize: 12 }}>
           {fmtDateTime(v)}
         </span>
       ),
@@ -147,42 +152,65 @@ export default function NotificationPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <BellOutlined style={{ fontSize: 20 }} />
-          <Title level={4} style={{ margin: 0 }}>알림 이력</Title>
-        </div>
-        <Space>
-          <Select
-            placeholder="유형 필터"
-            allowClear
-            style={{ width: 180 }}
-            value={typeFilter}
-            onChange={(v) => { setTypeFilter((v as AlertAction | undefined) ?? null); setPage(0); }}
-            options={ALERT_ACTIONS.map((a) => ({ label: ACTION_CONFIG[a].label, value: a }))}
-          />
-        </Space>
+      <div style={{ marginBottom: 16 }}>
+        <Title level={4} style={{ margin: 0, fontWeight: 600 }}>알림 이력</Title>
+        <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
+          재고 부족과 출고 불가 등 운영 알림 이력을 시간순으로 확인하는 화면입니다.
+        </Text>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={rows}
-        rowKey="id"
-        size="middle"
-        loading={isLoading}
-        locale={{ emptyText: <Empty description="알림 이력이 없습니다" /> }}
-        onRow={(r) => ({
-          onClick: () => { if (r.nav_path) navigate(r.nav_path); },
-          style: { cursor: r.nav_path ? 'pointer' : 'default' },
-        })}
-        pagination={{
-          current: page + 1,
-          pageSize: PAGE_SIZE,
-          total: data?.totalElements ?? 0,
-          showSizeChanger: false,
-          onChange: (p) => setPage(p - 1),
-        }}
-      />
+      <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '18px 20px' } }}>
+        <Text style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 12 }}>검색 조건</Text>
+        <Select
+          placeholder="유형 필터"
+          allowClear
+          style={{ width: 220 }}
+          value={typeFilter}
+          onChange={(v) => { setTypeFilter((v as AlertAction | undefined) ?? null); setPage(0); }}
+          options={ALERT_ACTIONS.map((a) => ({ label: ACTION_CONFIG[a].label, value: a }))}
+        />
+      </Card>
+
+      <Card
+        size="small"
+        styles={{ body: { padding: '0' } }}
+        title={(
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <Text style={{ fontWeight: 500 }}>알림 목록</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>총 {rows.length.toLocaleString()}건</Text>
+          </div>
+        )}
+      >
+        <Table
+          columns={columns}
+          dataSource={rows}
+          rowKey="id"
+          size="middle"
+          loading={isLoading}
+          locale={{ emptyText: <Empty description="알림 이력이 없습니다" /> }}
+          onRow={(r) => ({
+            onClick: () => { if (r.nav_path) navigate(r.nav_path); },
+            style: { cursor: r.nav_path ? 'pointer' : 'default' },
+          })}
+          pagination={{
+            current: page + 1,
+            pageSize: PAGE_SIZE,
+            total: data?.totalElements ?? 0,
+            showSizeChanger: false,
+            onChange: (p) => setPage(p - 1),
+          }}
+        />
+      </Card>
+
+      <style>{`
+        .ant-table-thead > tr > th {
+          background: #f8fafc !important;
+          color: #475569 !important;
+          font-weight: 600 !important;
+          font-size: 12px !important;
+          border-bottom: 1px solid #e5e7eb !important;
+        }
+      `}</style>
     </>
   );
 }

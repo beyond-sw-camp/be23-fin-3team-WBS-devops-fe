@@ -36,13 +36,22 @@ export function useProductFilterForOrder() {
     async (cond: ProductSearchCondition) => {
       setBusy(true);
       try {
-        const page = await searchProductsAdvanced(cond, 0, SEARCH_PAGE_SIZE);
-        const ids = page.content.map((p) => p.id);
-        if (page.totalElements > SEARCH_PAGE_SIZE) {
-          message.warning(
-            `매칭된 상품이 ${page.totalElements.toLocaleString()}건입니다. 상위 ${SEARCH_PAGE_SIZE}건으로 좁혀졌습니다 — 조건을 더 추가해 주세요.`,
+        const firstPage = await searchProductsAdvanced(cond, 0, SEARCH_PAGE_SIZE);
+        const collectedIds = new Set(firstPage.content.map((p) => p.id));
+        const pagesToFetch = firstPage.totalPages ?? 1;
+
+        if (pagesToFetch > 1) {
+          const restPages = await Promise.all(
+            Array.from({ length: pagesToFetch - 1 }, (_, index) =>
+              searchProductsAdvanced(cond, index + 1, SEARCH_PAGE_SIZE),
+            ),
           );
+          restPages.forEach((page) => {
+            page.content.forEach((product) => collectedIds.add(product.id));
+          });
         }
+
+        const ids = [...collectedIds];
         setProductIds(ids);
         setCondition(cond);
         setOpen(false);

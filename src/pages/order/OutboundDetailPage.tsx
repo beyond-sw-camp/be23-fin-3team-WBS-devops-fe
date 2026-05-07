@@ -146,19 +146,6 @@ export default function OutboundDetailPage() {
     onBeforePrint: () => new Promise<void>((resolve) => { requestAnimationFrame(() => requestAnimationFrame(() => resolve())); }),
     onPrintError: (_loc, err) => { message.error(err?.message || '인쇄를 시작할 수 없습니다.'); },
   });
-  const handleDispatchPrint = useReactToPrint({
-    contentRef: dispatchPrintRef,
-    documentTitle: () => `출고전표_${dispatch?.dispatch_no ?? order?.order_no ?? id}`,
-    pageStyle: `
-      @page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }
-      @media print {
-        body { margin: 0 !important; padding: 0 !important; color: #000 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      }
-    `,
-    onBeforePrint: () => new Promise<void>((resolve) => { requestAnimationFrame(() => requestAnimationFrame(() => resolve())); }),
-    onPrintError: (_loc, err) => { message.error(err?.message || '출고 전표 인쇄를 시작할 수 없습니다.'); },
-  });
-
   const status: OrderStatus = order?.status ?? 'draft';
   const currentStep = statusToStep[status] ?? 0;
   const tableScrollY = items.length > 6 ? 360 : undefined;
@@ -410,19 +397,6 @@ export default function OutboundDetailPage() {
                         void handlePrint();
                       },
                     },
-                    {
-                      key: 'dispatch',
-                      icon: <PrinterOutlined />,
-                      label: '출고 전표 출력',
-                      disabled: !dispatchEnabled,
-                      onClick: () => {
-                        if (!dispatch || !dispatchPrintRef.current) {
-                          message.warning('출고 전표가 아직 조회되지 않았습니다. 잠시 후 다시 시도해 주세요.');
-                          return;
-                        }
-                        void handleDispatchPrint();
-                      },
-                    },
                   ],
                 }}
               >
@@ -520,13 +494,26 @@ export default function OutboundDetailPage() {
             <Descriptions.Item label="창고">{order.warehouse_name || '-'}</Descriptions.Item>
             <Descriptions.Item label="출고예정일">{order.expected_date || '-'}</Descriptions.Item>
             <Descriptions.Item label="출처">
-              {order.origin_type === 'return' || order.source === 'return'
-                ? <Tag color="volcano">반품</Tag>
-                : order.source === 'purchase_order'
-                  ? <Tag color="blue">발주서</Tag>
-                  : order.source === 'manual'
-                    ? <Tag>수동 등록</Tag>
-                    : (order.source || '-')}
+              {order.origin_type === 'return' || order.source === 'return' ? (
+                <Space size={6}>
+                  <Tag color="volcano" style={{ margin: 0 }}>반품</Tag>
+                  {order.return_from_order_no && <Text strong>{order.return_from_order_no}</Text>}
+                </Space>
+              ) : (order.origin_type === 'sales_order' || order.source === 'sales_order')
+                  && order.source_sales_order_nos && order.source_sales_order_nos.length > 0 ? (
+                <Space size={6} wrap>
+                  <Tag color="purple" style={{ margin: 0 }}>수주서</Tag>
+                  {order.source_sales_order_nos.length === 1 ? (
+                    <Text strong>{order.source_sales_order_nos[0]}</Text>
+                  ) : (
+                    <Text strong>
+                      {order.source_sales_order_nos[0]} 외 {order.source_sales_order_nos.length - 1}건
+                    </Text>
+                  )}
+                </Space>
+              ) : order.source === 'manual' ? (
+                <Tag>수동 등록</Tag>
+              ) : (order.source || '-')}
             </Descriptions.Item>
             <Descriptions.Item label="생성자">{order.created_by_name || resolveUser(order.created_by)}</Descriptions.Item>
             <Descriptions.Item label="승인자">{order.approved_by_name || (order.approved_by ? resolveUser(order.approved_by) : '-')}</Descriptions.Item>
@@ -687,7 +674,23 @@ export default function OutboundDetailPage() {
             { label: '창고', value: order.warehouse_name },
             { label: '출고예정일', value: order.expected_date },
             { label: '상태', value: ORDER_STATUS_CONFIG[status]?.label ?? status },
-            { label: '출처', value: order.source === 'return' ? '반품' : order.source === 'purchase_order' ? '발주서' : order.source === 'manual' ? '수동 등록' : (order.source || '-') },
+            { label: '출처', value: (order.origin_type === 'return' || order.source === 'return')
+                ? '반품'
+                : (order.origin_type === 'sales_order' || order.source === 'sales_order')
+                  ? '수주서'
+                  : order.source === 'manual' ? '수동 등록' : (order.source || '-') },
+            ...((order.origin_type === 'sales_order' || order.source === 'sales_order')
+                && order.source_sales_order_nos && order.source_sales_order_nos.length > 0
+              ? [{
+                  label: '수주서 번호',
+                  value: order.source_sales_order_nos.length === 1
+                    ? order.source_sales_order_nos[0]
+                    : `${order.source_sales_order_nos[0]} 외 ${order.source_sales_order_nos.length - 1}건`,
+                }]
+              : []),
+            ...((order.origin_type === 'return' || order.source === 'return') && order.return_from_order_no
+              ? [{ label: '원본 입고지시서', value: order.return_from_order_no }]
+              : []),
             { label: '생성자', value: order.created_by_name || resolveUser(order.created_by) },
             { label: '승인자', value: order.approved_by_name || (order.approved_by ? resolveUser(order.approved_by) : '-') },
           ]}
@@ -722,6 +725,14 @@ export default function OutboundDetailPage() {
             documentOperator={dispatch.dispatched_by_name || resolveUser(dispatch.dispatched_by)}
             info={[
               { label: '지시서 번호', value: dispatch.order_no },
+              ...(dispatch.origin_type === 'sales_order' && dispatch.origin_refs && dispatch.origin_refs.length > 0
+                ? [{
+                    label: '수주서 번호',
+                    value: dispatch.origin_refs.length === 1
+                      ? dispatch.origin_refs[0].no
+                      : `${dispatch.origin_refs[0].no} 외 ${dispatch.origin_refs.length - 1}건`,
+                  }]
+                : []),
               { label: '출고처', value: dispatch.store_name },
               { label: '창고', value: dispatch.warehouse_name },
               { label: '출고일시', value: dispatch.dispatched_at ? dayjs(dispatch.dispatched_at).format('YYYY-MM-DD HH:mm') : '-' },

@@ -1,6 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
-import { Typography, Table, Tag, Space, Modal, Tabs, Badge, App } from 'antd';
+import {
+  Typography, Table, Tag, Space, Modal, Tabs, Badge, App, Card, Input, DatePicker, Button,
+} from 'antd';
+import {
+  SearchOutlined, ReloadOutlined, CalendarOutlined,
+} from '@ant-design/icons';
+import dayjs, { type Dayjs } from 'dayjs';
 import type { ColumnsType } from 'antd/es/table';
 import type { OutboundOrder, PickingList, PickingStatus, OrderStatus } from '@/types/order';
 import { ORDER_STATUS_CONFIG, PICKING_STATUS_CONFIG } from '@/types/order';
@@ -16,7 +22,7 @@ import type { WorkEventMessage } from '@/types/stomp';
 import { showStompToast } from '@/lib/stompMessages';
 import { getClientIdFromToken } from '@/utils/jwt';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 // ISO datetime (2026-04-22T00:43:07.195778) → '2026-04-22 00:43'
 function fmtDateTime(v: string | null | undefined): string {
@@ -55,6 +61,9 @@ const TAB_BADGE_COLOR: Record<PickingTabKey, string> = {
 export default function PickingListPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<PickingTabKey>('all');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [dateFrom, setDateFrom] = useState<Dayjs | null>(null);
+  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
   const { message } = App.useApp();
   const queryClient = useQueryClient();
 
@@ -78,30 +87,65 @@ export default function PickingListPage() {
   const [selectedOutboundIds, setSelectedOutboundIds] = useState<string[]>([]);
   const userMap = useUserNameMap();
 
-  // 탭별 건수
+  const inDateRange = (iso: string | null | undefined): boolean => {
+    if (!dateFrom && !dateTo) return true;
+    if (!iso) return false;
+    const d = dayjs(iso);
+    if (!d.isValid()) return false;
+    if (dateFrom && d.isBefore(dateFrom, 'day')) return false;
+    if (dateTo && d.isAfter(dateTo, 'day')) return false;
+    return true;
+  };
+
+  const resetFilters = () => {
+    setSearchKeyword('');
+    setDateFrom(null);
+    setDateTo(null);
+  };
+
+  /** 검색어 + 생성일 범위 적용한 결과 */
+  const filteredAll = useMemo(() => {
+    const kw = searchKeyword.trim().toLowerCase();
+    return allLists.filter((l) => {
+      if (kw) {
+        const assignee = (l.assignee && l.assignee !== '-')
+          ? l.assignee
+          : (l.assigned_to ? resolveUserName(userMap, l.assigned_to) : '');
+        const hits = (l.picking_no ?? '').toLowerCase().includes(kw)
+          || (l.warehouse_name ?? '').toLowerCase().includes(kw)
+          || assignee.toLowerCase().includes(kw);
+        if (!hits) return false;
+      }
+      if (!inDateRange(l.created_at)) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLists, searchKeyword, dateFrom, dateTo, userMap]);
+
+  // 탭별 건수 (필터 반영)
   const tabCounts = useMemo(() => {
     const counts: Record<PickingTabKey, number> = {
-      all: allLists.length,
+      all: filteredAll.length,
       pending: 0,
       in_progress: 0,
       completed: 0,
       issue: 0,
     };
-    allLists.forEach((l) => {
+    filteredAll.forEach((l) => {
       (Object.keys(TAB_STATUSES) as PickingTabKey[]).forEach((key) => {
         const statuses = TAB_STATUSES[key];
         if (key !== 'all' && statuses?.includes(l.status)) counts[key] += 1;
       });
     });
     return counts;
-  }, [allLists]);
+  }, [filteredAll]);
 
   // 현재 탭에 해당하는 피킹리스트만 필터
   const lists = useMemo(() => {
     const statuses = TAB_STATUSES[activeTab];
-    if (!statuses) return allLists;
-    return allLists.filter((l) => statuses.includes(l.status));
-  }, [allLists, activeTab]);
+    if (!statuses) return filteredAll;
+    return filteredAll.filter((l) => statuses.includes(l.status));
+  }, [filteredAll, activeTab]);
 
   const columns: ColumnsType<PickingList> = [
     { title: '피킹번호', dataIndex: 'picking_no', key: 'picking_no', width: 140 },
@@ -142,29 +186,74 @@ export default function PickingListPage() {
 
   return (
     <>
-      <div className="order-list-tone" style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <Title level={4} style={{ margin: 0 }}>피킹 리스트</Title>
         <Space>
-          <ProductFilterTriggerButton
-            {...productFilter}
-            matchedProductCount={productFilter.productIds?.length ?? null}
-          />
           <PermissionButton resource="OUTBOUND" action="CREATE" type="primary" onClick={() => setSelectOpen(true)} disabled={approvedOrders.length === 0}>
             웨이브 피킹 생성
           </PermissionButton>
         </Space>
       </div>
 
-      {productFilter.isFiltering && (
-        <div style={{ marginBottom: 12 }}>
-          <ProductFilterStatusBar
-            {...productFilter}
-            matchedProductCount={productFilter.productIds?.length ?? null}
-            filteredLineCount={allLists.length}
-          />
+      <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '18px 20px' } }}>
+        <Text strong style={{ display: 'block', fontSize: 14, marginBottom: 12 }}>검색 조건</Text>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            columnGap: 24,
+            rowGap: 10,
+          }}
+        >
+          <Space size={8} align="center">
+            <SearchOutlined style={{ color: '#64748b' }} />
+            <Text strong style={{ fontSize: 13, whiteSpace: 'nowrap' }}>검색어</Text>
+            <Input
+              placeholder="피킹번호 / 창고 / 담당자"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              allowClear
+              style={{ width: 240 }}
+            />
+          </Space>
+          <Space size={8} align="center">
+            <CalendarOutlined style={{ color: '#64748b' }} />
+            <Text strong style={{ fontSize: 13, whiteSpace: 'nowrap' }}>생성일</Text>
+            <DatePicker value={dateFrom} onChange={setDateFrom} placeholder="시작" style={{ width: 140 }} />
+            <Text type="secondary">~</Text>
+            <DatePicker value={dateTo} onChange={setDateTo} placeholder="종료" style={{ width: 140 }} />
+          </Space>
+          <div style={{ marginLeft: 'auto' }}>
+            <Space size={8}>
+              <ProductFilterTriggerButton
+                {...productFilter}
+                matchedProductCount={productFilter.productIds?.length ?? null}
+              />
+              <Button icon={<ReloadOutlined />} onClick={resetFilters}>초기화</Button>
+            </Space>
+          </div>
         </div>
-      )}
+        {productFilter.isFiltering && (
+          <div
+            style={{
+              marginTop: 12,
+              paddingTop: 12,
+              borderTop: '1px dashed #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            <ProductFilterStatusBar
+              {...productFilter}
+              matchedProductCount={productFilter.productIds?.length ?? null}
+              filteredLineCount={filteredAll.length}
+            />
+          </div>
+        )}
+      </Card>
 
       <Tabs
         activeKey={activeTab}
@@ -226,16 +315,6 @@ export default function PickingListPage() {
         onClose={() => setWaveOpen(false)}
         onSuccess={handleWaveSuccess}
       />
-      </div>
-      <style>{`
-        .order-list-tone .ant-table-thead > tr > th {
-          background: #f8fafc !important;
-          color: #475569 !important;
-          font-weight: 600 !important;
-          font-size: 12px !important;
-          border-bottom: 2px solid #dbe3ee !important;
-        }
-      `}</style>
     </>
   );
 }

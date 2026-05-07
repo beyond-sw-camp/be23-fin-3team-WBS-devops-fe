@@ -394,7 +394,7 @@ export default function ProductPage() {
       <ProductSearchFilterModal
         open={searchModalOpen}
         onCancel={() => setSearchModalOpen(false)}
-        enabledFilters={['name', 'sku', 'barcode', 'brand', 'supplier', 'category', 'ownerType', 'isActive', 'price', 'options']}
+        enabledFilters={['name', 'sku', 'barcode', 'supplier', 'category', 'ownerType', 'isActive', 'price', 'options']}
         onApply={applyCondition}
       />
 

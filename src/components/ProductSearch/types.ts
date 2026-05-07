@@ -12,7 +12,6 @@ export interface ProductSearchCondition {
   skuPrefix?: boolean;
   barcode?: string;
   name?: string;
-  brand?: string;
   /** 카테고리 캐스케이더의 리프 ID (BE가 자손 자동 매칭) */
   categoryId?: string;
   /** 카테고리 캐스케이더 경로 보존용 (대→중→소 순) */
@@ -34,7 +33,6 @@ export type ProductSearchFilterKey =
   | 'sku'
   | 'barcode'
   | 'name'
-  | 'brand'
   | 'category'
   | 'supplier'
   | 'ownerType'
@@ -47,7 +45,6 @@ export const ALL_FILTER_KEYS: ProductSearchFilterKey[] = [
   'sku',
   'barcode',
   'name',
-  'brand',
   'category',
   'supplier',
   'ownerType',

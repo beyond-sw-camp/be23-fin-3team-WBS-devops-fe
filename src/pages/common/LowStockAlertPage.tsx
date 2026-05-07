@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Table, Tag, Empty, Spin, Space, Button, Tabs } from 'antd';
+import { Typography, Table, Tag, Empty, Spin, Space, Button, Tabs, Card } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { LowStockItem } from '@/types/statistics';
 import { useLowStockItems } from '@/hooks/useStatisticsQuery';
@@ -141,72 +141,87 @@ export default function LowStockAlertPage() {
 
   return (
     <>
-      <div className="order-list-tone" style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+      <div style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>
+        <div style={{ marginBottom: 16 }}>
           <Title level={4} style={{ margin: 0 }}>재고 부족 품목</Title>
-          {items.length > 0 && <Tag color="red">{items.length}건</Tag>}
+          <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
+            각 상품에 설정된 안전재고 기준으로 가용재고가 부족한 품목을 확인하는 화면입니다.
+          </Text>
         </div>
 
-        <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 12 }}>
-          각 상품에 설정된 안전재고(minStockQty) 기준으로 가용재고가 부족한 품목을 표시합니다.
-        </Text>
+        <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '18px 20px' } }}>
+          <Space direction="vertical" size={10} style={{ width: '100%' }}>
+            <div>
+              <Text strong style={{ display: 'block', fontSize: 14, marginBottom: 12 }}>검색 조건</Text>
+              <ProductFilterTriggerButton
+                {...productFilter}
+                matchedProductCount={productFilter.productIds?.length ?? null}
+              />
+            </div>
+            {productFilter.isFiltering && (
+              <ProductFilterStatusBar
+                {...productFilter}
+                matchedProductCount={productFilter.productIds?.length ?? null}
+                filteredLineCount={filteredItems.length}
+              />
+            )}
+          </Space>
+        </Card>
 
-        <div style={{ marginBottom: 10 }}>
-          <ProductFilterTriggerButton
-            {...productFilter}
-            matchedProductCount={productFilter.productIds?.length ?? null}
-          />
-        </div>
-        {productFilter.isFiltering && (
-          <div style={{ marginBottom: 10 }}>
-            <ProductFilterStatusBar
-              {...productFilter}
-              matchedProductCount={productFilter.productIds?.length ?? null}
-              filteredLineCount={filteredItems.length}
+        <Card
+          size="small"
+          styles={{ body: { padding: '0' } }}
+          title={(
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <Text strong>부족 품목 목록</Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>총 {sortedItems.length.toLocaleString()}건</Text>
+              {items.length > 0 && <Tag color="error" style={{ margin: 0 }}>전체 {items.length.toLocaleString()}건</Tag>}
+            </div>
+          )}
+        >
+          {warehouseTabs.length > 1 && (
+            <div style={{ padding: '0 16px', borderBottom: '1px solid #f0f0f0' }}>
+              <Tabs
+                activeKey={selectedWarehouseId}
+                onChange={setSelectedWarehouseId}
+                size="small"
+                style={{ marginBottom: 0 }}
+                items={[
+                  { key: WAREHOUSE_FILTER_ALL, label: `전체 (${items.length})` },
+                  ...warehouseTabs.map((w) => ({
+                    key: w.id,
+                    label: `${w.name} (${w.count})`,
+                  })),
+                ]}
+              />
+            </div>
+          )}
+
+          {sortedItems.length === 0 ? (
+            <Empty description="재고 부족 품목이 없습니다" style={{ margin: '80px 0' }} />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={sortedItems}
+              rowKey={(r) => `${r.product_id}-${r.warehouse_id}`}
+              size="middle"
+              pagination={{ pageSize: 20 }}
+              onRow={(record) => ({
+                onClick: () => goStockStatus(record),
+                style: { cursor: 'pointer' },
+              })}
             />
-          </div>
-        )}
-
-        {warehouseTabs.length > 1 && (
-          <Tabs
-            activeKey={selectedWarehouseId}
-            onChange={setSelectedWarehouseId}
-            size="small"
-            style={{ marginBottom: 4 }}
-            items={[
-              { key: WAREHOUSE_FILTER_ALL, label: `전체 (${items.length})` },
-              ...warehouseTabs.map((w) => ({
-                key: w.id,
-                label: `${w.name} (${w.count})`,
-              })),
-            ]}
-          />
-        )}
-
-        {sortedItems.length === 0 ? (
-          <Empty description="재고 부족 품목이 없습니다" style={{ marginTop: 80 }} />
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={sortedItems}
-            rowKey={(r) => `${r.product_id}-${r.warehouse_id}`}
-            size="middle"
-            pagination={{ pageSize: 20 }}
-            onRow={(record) => ({
-              onClick: () => goStockStatus(record),
-              style: { cursor: 'pointer' },
-            })}
-          />
-        )}
+          )}
+        </Card>
       </div>
 
       <style>{`
-        .order-list-tone .ant-table-thead > tr > th {
+        .ant-table-thead > tr > th {
           background: #f8fafc !important;
           color: #475569 !important;
           font-weight: 600 !important;
           font-size: 12px !important;
-          border-bottom: 2px solid #dbe3ee !important;
+          border-bottom: 1px solid #e5e7eb !important;
         }
       `}</style>
     </>

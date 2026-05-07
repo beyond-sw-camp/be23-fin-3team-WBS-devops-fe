@@ -89,7 +89,7 @@ export const suggestProductSku = async (productGroupId: string): Promise<string>
 export const getProductsReal = async (): Promise<Product[]> => {
   const res = await apiClient.get<BePage<BeProductListResDto> | BeProductListResDto[]>(
     '/master-service/product/list',
-    { params: { size: 100, sort: 'id,desc' } },
+    { params: { size: 1000, sort: 'id,desc' } },
   );
   const arr = Array.isArray(res.data) ? res.data : res.data.content ?? [];
   return arr.map(mapBeProduct);
@@ -174,7 +174,6 @@ export interface AdvancedSearchParams {
   /** SKU prefix 모드 — BE는 단순 LIKE이므로 클라이언트에서 sku 끝에 %를 붙이는 대신 BE에서 처리됨 */
   barcode?: string;
   name?: string;
-  brand?: string;
   categoryId?: string;
   supplierId?: string;
   productGroupId?: string;
@@ -206,7 +205,6 @@ export const searchProductsAdvanced = async (
   if (params.sku) query.sku = params.sku;
   if (params.barcode) query.barcode = params.barcode;
   if (params.name) query.name = params.name;
-  if (params.brand) query.brand = params.brand;
   if (params.categoryId) query.categoryId = params.categoryId;
   if (params.supplierId) query.supplierId = params.supplierId;
   if (params.productGroupId) query.productGroupId = params.productGroupId;

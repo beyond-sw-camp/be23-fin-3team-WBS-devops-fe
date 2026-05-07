@@ -4,6 +4,21 @@ import * as inventoryApi from '@/api/inventory';
 export const useInventoryStocks = (params?: { warehouseId?: string; zone?: string; search?: string }) =>
   useQuery({ queryKey: ['inventory-stocks', params], queryFn: () => inventoryApi.getInventoryStocks(params) });
 
+/** 조회일자(date) 가 지정되면 by-date 엔드포인트 사용. date=null 이면 hook 비활성. */
+export const useInventoryStocksByDate = (
+  params: { date: string | null; warehouseId?: string; zone?: string; search?: string },
+) =>
+  useQuery({
+    queryKey: ['inventory-stocks-by-date', params],
+    queryFn: () => inventoryApi.getInventoryStocksByDate({
+      date: params.date as string,
+      warehouseId: params.warehouseId,
+      zone: params.zone,
+      search: params.search,
+    }),
+    enabled: !!params.date,
+  });
+
 /** 적치 위치 추천 (productId + warehouseId 양쪽이 있을 때만 활성화) */
 export const useSuggestedLocations = (productId: string | null, warehouseId: string | null) =>
   useQuery({

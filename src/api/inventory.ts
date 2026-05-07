@@ -363,6 +363,30 @@ export const getInventoryStocks = async (
   return list;
 };
 
+/**
+ * 조회일자 기준 재고 현황 — InventoryTransaction 으로 역산.
+ * 응답 형식은 getInventoryStocks 와 동일하되 수량 필드만 그 시점 값.
+ *
+ * GET /stock-service/inventory/by-date?date=YYYY-MM-DD&warehouseId=...
+ */
+export const getInventoryStocksByDate = async (
+  params: { date: string; warehouseId?: string; zone?: string; search?: string },
+): Promise<InventoryStock[]> => {
+  const res = await apiClient.get<BeInventoryRes[]>('/stock-service/inventory/by-date', {
+    params: {
+      date: params.date,
+      ...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
+    },
+  });
+  let list = (res.data ?? []).map(mapBeInventory);
+  if (params.search) {
+    const kw = params.search.toLowerCase();
+    list = list.filter((s) => s.sku.toLowerCase().includes(kw) || s.product_name.toLowerCase().includes(kw));
+  }
+  if (params.zone) list = list.filter((s) => s.zone_name === params.zone || s.zone_code === params.zone);
+  return list;
+};
+
 export const getInventoryTransactions = async (
   stockId: string | number,
 ): Promise<InventoryTransaction[]> => {

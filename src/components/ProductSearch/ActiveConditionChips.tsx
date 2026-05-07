@@ -83,18 +83,11 @@ export default function ActiveConditionChips({ condition, onChange, onClearAll }
         onRemove: () => onChange({ ...condition, name: undefined }),
       });
     }
-    if (condition.brand) {
-      arr.push({
-        key: 'brand',
-        label: `브랜드: ${condition.brand}`,
-        onRemove: () => onChange({ ...condition, brand: undefined }),
-      });
-    }
     if (condition.supplierId) {
       const name = supplierNameMap.get(condition.supplierId) ?? '선택됨';
       arr.push({
         key: 'supplierId',
-        label: `매입처: ${name}`,
+        label: `입고처: ${name}`,
         onRemove: () => onChange({ ...condition, supplierId: undefined }),
       });
     }

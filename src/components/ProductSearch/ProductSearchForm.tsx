@@ -12,7 +12,7 @@ import {
   Space,
 } from 'antd';
 import type { DefaultOptionType } from 'antd/es/cascader';
-import { useSuppliers, useBrands } from '@/hooks/useMasterQuery';
+import { useSuppliers } from '@/hooks/useMasterQuery';
 import {
   getProductCategoryRoots,
   getProductCategoryChildren,
@@ -75,7 +75,6 @@ export default function ProductSearchForm({
   ) => setDraft((prev) => ({ ...prev, [key]: val }));
 
   const { data: suppliers = [] } = useSuppliers();
-  const { data: brands = [] } = useBrands();
 
   // ── 카테고리 캐스케이더 (lazy) ──
   const [cascaderOptions, setCascaderOptions] = useState<CascaderNode[]>([]);
@@ -177,23 +176,8 @@ export default function ProductSearchForm({
             />
           </Field>
         )}
-        {enabled.has('brand') && (
-          <Field label="브랜드">
-            <Select
-              size="small"
-              placeholder="전체"
-              value={draft.brand}
-              onChange={(v) => update('brand', v)}
-              options={brands.map((b) => ({ label: b, value: b }))}
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              style={{ width: '100%' }}
-            />
-          </Field>
-        )}
         {enabled.has('supplier') && (
-          <Field label="매입처">
+          <Field label="입고처">
             <Select
               size="small"
               placeholder="전체"

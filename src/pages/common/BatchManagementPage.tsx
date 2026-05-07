@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, Button, Table, Tag, Space, Modal, App, Alert, Tabs, DatePicker, Empty, Input, Switch, Spin,
+  Typography, Button, Table, Tag, Space, Modal, App, Alert, Tabs, DatePicker, Empty, Input, Switch, Spin, Card,
 } from 'antd';
 import {
   ThunderboltOutlined, PlayCircleOutlined, ReloadOutlined,
@@ -98,7 +98,7 @@ function ExpandedSchedulerDetail({ historyId }: { historyId: string }) {
     {
       title: '출고지시서', dataIndex: 'order_no', key: 'order_no', width: 180,
       render: (v: string | null) => (
-        <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12, color: '#0f172a', fontWeight: 500 }}>
+        <span style={{ fontSize: 12, color: '#0f172a', fontWeight: 500 }}>
           {v ?? '-'}
         </span>
       ),
@@ -119,9 +119,7 @@ function ExpandedSchedulerDetail({ historyId }: { historyId: string }) {
           : (
             <Space size={4} wrap>
               {v.map((sn) => (
-                <Tag key={sn} color="default" style={{
-                  margin: 0, fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11,
-                }}>
+                <Tag key={sn} color="default" style={{ margin: 0, fontSize: 11 }}>
                   {sn}
                 </Tag>
               ))}
@@ -135,7 +133,7 @@ function ExpandedSchedulerDetail({ historyId }: { historyId: string }) {
           <Button
             type="link"
             size="small"
-            style={{ padding: 0, height: 'auto', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12 }}
+            style={{ padding: 0, height: 'auto', fontSize: 12 }}
             onClick={() => navigate(`/order/picking/${r.picking_list_id}`)}
           >
             {r.picking_no ?? '웨이브 보기'}
@@ -227,7 +225,7 @@ function SchedulerTab() {
   const columns: ColumnsType<SchedulerHistory> = useMemo(() => [
     {
       title: '시작시각', dataIndex: 'started_at', key: 'started_at', width: 150,
-      render: (v: string) => <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12 }}>{fmtDateTime(v)}</span>,
+      render: (v: string) => <span style={{ fontSize: 12 }}>{fmtDateTime(v)}</span>,
     },
     {
       title: '상태', dataIndex: 'status', key: 'status', width: 110, align: 'center',
@@ -281,7 +279,7 @@ function SchedulerTab() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <Text strong>웨이브 자동생성</Text>
-            <Tag color="blue" style={{ margin: 0, fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>
+            <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
               {WAVE_JOB_NAME}
             </Tag>
             <Text type="secondary" style={{ fontSize: 12 }}>매일 오전 7시 자동 실행</Text>
@@ -386,7 +384,7 @@ function ManualWaveTab() {
   const columns: ColumnsType<AuditLog> = useMemo(() => [
     {
       title: '시작시각', dataIndex: 'created_at', key: 'created_at', width: 150,
-      render: (v: string) => <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12 }}>{fmtDateTime(v)}</span>,
+      render: (v: string) => <span style={{ fontSize: 12 }}>{fmtDateTime(v)}</span>,
     },
     {
       title: '사용자', dataIndex: 'user_name', key: 'user_name', width: 140,
@@ -403,7 +401,7 @@ function ManualWaveTab() {
     },
     {
       title: 'IP', dataIndex: 'ip_address', key: 'ip_address', width: 140,
-      render: (v: string) => <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12, color: '#64748b' }}>{v || '-'}</span>,
+      render: (v: string) => <span style={{ fontSize: 12, color: '#64748b' }}>{v || '-'}</span>,
     },
     {
       title: '소요', dataIndex: 'duration_ms', key: 'duration_ms', width: 100, align: 'right',
@@ -493,9 +491,9 @@ function ManualWaveTab() {
                 <Text type="secondary" style={{ fontSize: 11, marginLeft: 6 }}>({detail.user_id?.slice(0, 8)}…)</Text>
               </div>
               <div style={{ color: '#64748b' }}>URI</div>
-              <div style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12 }}>{detail.request_uri}</div>
+              <div style={{ fontSize: 12 }}>{detail.request_uri}</div>
               <div style={{ color: '#64748b' }}>IP</div>
-              <div style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12 }}>{detail.ip_address || '-'}</div>
+              <div style={{ fontSize: 12 }}>{detail.ip_address || '-'}</div>
               <div style={{ color: '#64748b' }}>소요</div>
               <div>{detail.duration_ms != null ? `${detail.duration_ms} ms` : '-'}</div>
             </div>
@@ -511,7 +509,7 @@ function ManualWaveTab() {
                   display: 'flex', flexWrap: 'wrap', gap: 6,
                 }}>
                   {extractedOrderIds.map((id) => (
-                    <Tag key={id} color="blue" style={{ margin: 0, fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>
+                    <Tag key={id} color="blue" style={{ margin: 0, fontSize: 11 }}>
                       {id}
                     </Tag>
                   ))}
@@ -584,7 +582,7 @@ function AutoWaveSettingsTab() {
     {
       title: '코드', dataIndex: 'code', key: 'code', width: 160,
       render: (v: string) => (
-        <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 12, color: '#64748b' }}>{v}</span>
+        <span style={{ fontSize: 12, color: '#64748b' }}>{v}</span>
       ),
     },
     {
@@ -644,23 +642,33 @@ function AutoWaveSettingsTab() {
 export default function BatchManagementPage() {
   return (
     <>
-      <Title level={4} style={{ marginBottom: 16 }}>배치 관리</Title>
+      <div style={{ marginBottom: 16 }}>
+        <Title level={4} style={{ margin: 0 }}>배치 관리</Title>
+        <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
+          시스템이 자동 실행한 작업과 관리자가 수동으로 만든 웨이브 이력을 함께 확인하는 화면입니다.
+        </Text>
+      </div>
 
-      <Alert
-        type="info"
-        showIcon
-        message="배치 관리는 시스템이 자동 실행한 작업 (스케줄러) 과 관리자가 수동으로 만든 웨이브 이력을 함께 확인하는 페이지입니다."
-        style={{ marginBottom: 16 }}
-      />
+      <Card size="small" styles={{ body: { padding: '8px 20px 20px' } }}>
+        <Tabs
+          defaultActiveKey="scheduler"
+          items={[
+            { key: 'scheduler', label: '스케줄러 (자동/즉시실행)', children: <SchedulerTab /> },
+            { key: 'manual', label: '수동 웨이브 이력', children: <ManualWaveTab /> },
+            { key: 'auto-wave', label: '자동 웨이브 설정', children: <AutoWaveSettingsTab /> },
+          ]}
+        />
+      </Card>
 
-      <Tabs
-        defaultActiveKey="scheduler"
-        items={[
-          { key: 'scheduler', label: '스케줄러 (자동/즉시실행)', children: <SchedulerTab /> },
-          { key: 'manual', label: '수동 웨이브 이력', children: <ManualWaveTab /> },
-          { key: 'auto-wave', label: '자동 웨이브 설정', children: <AutoWaveSettingsTab /> },
-        ]}
-      />
+      <style>{`
+        .ant-table-thead > tr > th {
+          background: #f8fafc !important;
+          color: #475569 !important;
+          font-weight: 600 !important;
+          font-size: 12px !important;
+          border-bottom: 1px solid #e5e7eb !important;
+        }
+      `}</style>
     </>
   );
 }
