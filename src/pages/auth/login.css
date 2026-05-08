@@ -29,7 +29,7 @@
 
 .login-wbs__panel {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: min(430px, calc(100vw - 40px));
   margin-left: auto;
   margin-right: clamp(24px, 7vw, 140px);
@@ -115,15 +115,15 @@
 
 .login-wbs__card.ant-card {
   width: 100%;
-  background: var(--wbs-glass) !important;
-  backdrop-filter: blur(30px) saturate(145%);
-  -webkit-backdrop-filter: blur(30px) saturate(145%);
+  background: rgba(13, 17, 23, 0.78) !important;
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
   border: 1px solid var(--wbs-glass-border) !important;
   border-radius: 18px !important;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 20px 56px rgba(2, 6, 23, 0.42),
-    0 0 30px rgba(99, 102, 241, 0.16);
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    0 0 36px rgba(99, 102, 241, 0.22);
 }
 
 .login-wbs__card .ant-card-body {
@@ -230,4 +230,197 @@
   .login-wbs__brand {
     text-align: center;
   }
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Intro overlay — 클릭 전 풀스크린 인트로 화면
+ * ────────────────────────────────────────────────────────────── */
+.login-wbs__intro {
+  all: unset;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(15, 23, 42, 0.45), rgba(13, 17, 23, 0.0) 70%);
+  animation: wbs-intro-in 600ms ease-out both;
+}
+
+.login-wbs__intro:hover .login-wbs__intro-prompt {
+  color: #ffffff;
+  text-shadow:
+    0 0 14px rgba(96, 165, 250, 0.75),
+    0 0 32px rgba(99, 102, 241, 0.5);
+}
+
+.login-wbs__intro-inner {
+  text-align: center;
+  padding: 32px 40px;
+  position: relative;
+  pointer-events: none;
+}
+
+.login-wbs__intro-logo {
+  font-size: clamp(5.5rem, 15vw, 10rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #ffffff;
+  line-height: 1;
+  margin: 0;
+  text-indent: 0.22em;
+  text-shadow:
+    0 0 24px rgba(96, 165, 250, 0.45),
+    0 0 60px rgba(99, 102, 241, 0.32),
+    0 12px 48px rgba(2, 6, 23, 0.7);
+  animation: wbs-logo-glow 4s ease-in-out infinite;
+}
+
+.login-wbs__intro-tagline {
+  margin-top: 28px;
+  font-size: clamp(1.05rem, 2vw, 1.32rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.18em;
+}
+
+.login-wbs__intro-divider {
+  width: clamp(180px, 24vw, 320px);
+  height: 1px;
+  margin: 36px auto 26px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(125, 211, 252, 0.5) 50%,
+    transparent 100%
+  );
+}
+
+.login-wbs__intro-prompt {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+  letter-spacing: 0.32em;
+  color: rgba(255, 255, 255, 0.86);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  animation: wbs-prompt-pulse 1.8s ease-in-out infinite;
+  transition: color 200ms ease, text-shadow 200ms ease;
+}
+
+.login-wbs__intro-cursor {
+  display: inline-block;
+  margin-left: 6px;
+  color: rgba(125, 211, 252, 0.95);
+  animation: wbs-cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes wbs-intro-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes wbs-logo-glow {
+  0%, 100% {
+    text-shadow:
+      0 0 24px rgba(96, 165, 250, 0.42),
+      0 0 60px rgba(99, 102, 241, 0.28),
+      0 12px 48px rgba(2, 6, 23, 0.7);
+  }
+  50% {
+    text-shadow:
+      0 0 32px rgba(96, 165, 250, 0.65),
+      0 0 80px rgba(99, 102, 241, 0.45),
+      0 12px 48px rgba(2, 6, 23, 0.7);
+  }
+}
+
+@keyframes wbs-prompt-pulse {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
+}
+
+@keyframes wbs-cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* 로그인 단계 — 캔버스 위 어두운 vignette 오버레이 */
+.login-wbs__dim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 55% 95% at 82% 50%,
+      rgba(8, 11, 18, 0.92) 0%,
+      rgba(8, 11, 18, 0.7) 30%,
+      rgba(8, 11, 18, 0.35) 60%,
+      transparent 100%
+    );
+  animation: wbs-dim-in 480ms ease-out both;
+}
+
+@media (max-width: 900px) {
+  .login-wbs__dim {
+    background:
+      radial-gradient(
+        ellipse 75% 80% at 50% 50%,
+        rgba(8, 11, 18, 0.9) 0%,
+        rgba(8, 11, 18, 0.65) 35%,
+        rgba(8, 11, 18, 0.25) 70%,
+        transparent 100%
+      );
+  }
+}
+
+@keyframes wbs-dim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 로그인 패널 페이드인 */
+.login-wbs__panel--enter {
+  animation: wbs-panel-in 480ms ease-out both;
+}
+
+@keyframes wbs-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 인트로로 돌아가기 */
+.login-wbs__back {
+  all: unset;
+  margin-top: 18px;
+  align-self: center;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 200ms ease, background 200ms ease;
+}
+
+.login-wbs__back:hover {
+  color: rgba(125, 211, 252, 0.95);
+  background: rgba(255, 255, 255, 0.04);
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Breadcrumb, Button, Space, Dropdown, theme, App } from 'antd';
+import { Layout, Menu, Breadcrumb, Button, Space, Dropdown, theme, App, Badge } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStompSubscription } from '@/hooks/useStompSubscription';
 import {
@@ -28,8 +28,8 @@ import {
 import type { MenuProps } from 'antd';
 import { useAuthStore } from '@/stores/authStore';
 import { getClientIdFromToken } from '@/utils/jwt';
-import { useSoShortageStore } from '@/stores/soShortageStore';
-import { useLowStockStore, type LowStockPayload } from '@/stores/lowStockStore';
+import { useSoShortageCount, useSoShortageStore } from '@/stores/soShortageStore';
+import { useLowStockCount, useLowStockStore, type LowStockPayload } from '@/stores/lowStockStore';
 import { getSoShortageBaseline } from '@/api/alert';
 import { getLowStockItems } from '@/api/statistics';
 import { useQuery } from '@tanstack/react-query';
@@ -359,6 +359,9 @@ export default function MainLayout() {
   const addLowStock = useLowStockStore((s) => s.addShortage);
   const resolveLowStock = useLowStockStore((s) => s.resolveShortage);
   const setLowStocks = useLowStockStore((s) => s.setShortages);
+  const soShortageCount = useSoShortageCount();
+  const lowStockCount = useLowStockCount();
+  const notificationCount = soShortageCount + lowStockCount;
 
   // Baseline 조회 — 로그인 후 진입/새로고침 시 현재 부족 SO 전체를 한번 받아 store seed.
   // 그 후 WS 이벤트가 added/resolved 로 갱신.
@@ -420,7 +423,7 @@ export default function MainLayout() {
               : '재고 부족 발생',
             placement: 'topRight',
             duration: 6,
-            onClick: () => navigate(`/order/sales-orders/${event.salesOrderId}/progress`),
+            onClick: () => navigate('/common/notifications'),
             style: { cursor: 'pointer' },
           });
         }
@@ -432,7 +435,7 @@ export default function MainLayout() {
             description: `${event.storeName} — 재고 부족 해소`,
             placement: 'topRight',
             duration: 4,
-            onClick: () => navigate(`/order/sales-orders/${event.salesOrderId}/progress`),
+            onClick: () => navigate('/common/notifications'),
             style: { cursor: 'pointer' },
           });
         }
@@ -459,7 +462,7 @@ export default function MainLayout() {
             description: `현재 ${event.availableQty} / 안전재고 ${event.minStockQty}`,
             placement: 'topRight',
             duration: 6,
-            onClick: () => navigate('/common/low-stock'),
+            onClick: () => navigate('/common/notifications'),
             style: { cursor: 'pointer' },
           });
         }
@@ -470,7 +473,7 @@ export default function MainLayout() {
             message: `🟢 [${event.productName} / ${wh}] 재고 부족 해소`,
             placement: 'topRight',
             duration: 4,
-            onClick: () => navigate('/common/low-stock'),
+            onClick: () => navigate('/common/notifications'),
             style: { cursor: 'pointer' },
           });
         }
@@ -613,7 +616,9 @@ export default function MainLayout() {
               placement="bottomRight"
               trigger={['click']}
             >
-              <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
+              <Badge count={notificationCount} size="small" overflowCount={99}>
+                <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
+              </Badge>
             </Dropdown>
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
