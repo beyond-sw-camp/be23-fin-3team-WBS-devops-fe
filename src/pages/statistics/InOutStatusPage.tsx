@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, DatePicker, Table, Card, Tabs, Select, Space, Statistic, Row, Col, Radio, Tag, Empty, Button, Popover, Switch,
+  Typography, DatePicker, Table, Card, Tabs, Select, Space, Statistic, Row, Col, Radio, Tag, Empty, Button, Popover, Switch, Divider,
 } from 'antd';
 import {
   ImportOutlined, ExportOutlined, SwapOutlined,
   CalendarOutlined, ArrowRightOutlined, DeploymentUnitOutlined,
+  RiseOutlined, FallOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -425,64 +426,86 @@ export default function InOutStatusPage() {
     else if (preset === '90d') setDailyRange([today.subtract(89, 'day'), today]);
   };
 
-  const renderSummaryCards = (summary: SummaryStats, unit: '일' | '월') => (
-    <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-      <Col xs={12} md={8} lg={6}>
-        <Card size="small" styles={{ body: { padding: 14 } }}>
-          <Statistic
-            title={<><ImportOutlined style={{ color: '#1677ff', marginRight: 4 }} />총 입고</>}
-            value={summary.totalInbound}
-            valueStyle={{ color: '#1677ff', fontSize: 22 }}
-            suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · {unit}평균 {summary.avgInbound.toLocaleString()}</Text>}
-          />
-        </Card>
-      </Col>
-      <Col xs={12} md={8} lg={6}>
-        <Card size="small" styles={{ body: { padding: 14 } }}>
-          <Statistic
-            title={<><ExportOutlined style={{ color: '#fa8c16', marginRight: 4 }} />총 출고</>}
-            value={summary.totalOutbound}
-            valueStyle={{ color: '#fa8c16', fontSize: 22 }}
-            suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · {unit}평균 {summary.avgOutbound.toLocaleString()}</Text>}
-          />
-        </Card>
-      </Col>
-      <Col xs={12} md={8} lg={6}>
-        <Card size="small" styles={{ body: { padding: 14 } }}>
-          <Statistic
-            title={<><SwapOutlined style={{ color: '#7c3aed', marginRight: 4 }} />총 이동</>}
-            value={summary.totalTransfer}
-            valueStyle={{ color: '#7c3aed', fontSize: 22 }}
-            suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · {unit}평균 {summary.avgTransfer.toLocaleString()}</Text>}
-          />
-        </Card>
-      </Col>
-      <Col xs={12} md={24} lg={6}>
-        <Card size="small" styles={{ body: { padding: 14 } }}>
-          <Space direction="vertical" size={2} style={{ width: '100%' }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>총 흐름 / 피크 {unit}</Text>
-            <Text strong style={{ fontSize: 24, color: '#0f172a' }}>{summary.totalFlow.toLocaleString()}</Text>
-            <Space wrap size={6}>
-              <Tag color="purple" icon={<DeploymentUnitOutlined />} style={{ margin: 0 }}>
-                피크 {summary.peakFlowLabel ?? '-'} · {summary.peakFlowQty.toLocaleString()}
-              </Tag>
-              <Tag color={summary.net >= 0 ? 'green' : 'red'} style={{ margin: 0 }}>
-                순증감 {summary.net >= 0 ? '+' : ''}{summary.net.toLocaleString()}
-              </Tag>
-              {(summary.totalAdjustmentInbound > 0 || summary.totalAdjustmentOutbound > 0) && (
-                <Tag color="geekblue" style={{ margin: 0 }}>
-                  조정 +{summary.totalAdjustmentInbound.toLocaleString()} / -{summary.totalAdjustmentOutbound.toLocaleString()}
-                </Tag>
-              )}
+  const renderSummaryCards = (summary: SummaryStats, unit: '일' | '월') => {
+    const hasAdjustment = summary.totalAdjustmentInbound > 0 || summary.totalAdjustmentOutbound > 0;
+    const netColor = summary.net >= 0 ? '#10b981' : '#ef4444';
+    const NetIcon = summary.net >= 0 ? RiseOutlined : FallOutlined;
+
+    return (
+      <>
+        <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
+          <Col xs={12} md={6}>
+            <Card size="small" styles={{ body: { padding: 14 } }}>
+              <Statistic
+                title={<><ImportOutlined style={{ color: '#1677ff', marginRight: 4 }} />총 입고</>}
+                value={summary.totalInbound}
+                valueStyle={{ color: '#1677ff', fontSize: 24, fontWeight: 600 }}
+                suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · {unit}평균 {summary.avgInbound.toLocaleString()}</Text>}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} md={6}>
+            <Card size="small" styles={{ body: { padding: 14 } }}>
+              <Statistic
+                title={<><ExportOutlined style={{ color: '#fa8c16', marginRight: 4 }} />총 출고</>}
+                value={summary.totalOutbound}
+                valueStyle={{ color: '#fa8c16', fontSize: 24, fontWeight: 600 }}
+                suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · {unit}평균 {summary.avgOutbound.toLocaleString()}</Text>}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} md={6}>
+            <Card size="small" styles={{ body: { padding: 14 } }}>
+              <Statistic
+                title={<><SwapOutlined style={{ color: '#7c3aed', marginRight: 4 }} />총 이동</>}
+                value={summary.totalTransfer}
+                valueStyle={{ color: '#7c3aed', fontSize: 24, fontWeight: 600 }}
+                suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · {unit}평균 {summary.avgTransfer.toLocaleString()}</Text>}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} md={6}>
+            <Card size="small" styles={{ body: { padding: 14 } }}>
+              <Statistic
+                title={<><NetIcon style={{ color: netColor, marginRight: 4 }} />재고 순증감 <Text type="secondary" style={{ fontSize: 11, fontWeight: 'normal' }}>(입고−출고)</Text></>}
+                value={summary.net}
+                valueStyle={{ color: netColor, fontSize: 24, fontWeight: 600 }}
+                prefix={summary.net > 0 ? '+' : ''}
+                suffix={<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}> · 활동 {summary.activeBuckets.toLocaleString()}{unit === '일' ? '일' : '개월'}</Text>}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Card
+          size="small"
+          style={{ marginBottom: 16, background: '#fafafa', borderColor: '#e2e8f0' }}
+          styles={{ body: { padding: '10px 16px' } }}
+        >
+          <Space split={<Divider type="vertical" style={{ borderColor: '#cbd5e1', margin: 0 }} />} size={14} wrap>
+            <Space size={8}>
+              <DeploymentUnitOutlined style={{ color: '#64748b' }} />
+              <Text type="secondary" style={{ fontSize: 12 }}>총 활동량 (입고+출고+이동)</Text>
+              <Text strong style={{ fontSize: 14, color: '#0f172a' }}>{summary.totalFlow.toLocaleString()}</Text>
             </Space>
-            <Text type="secondary" style={{ fontSize: 11 }}>
-              활동 {unit}수 {summary.activeBuckets.toLocaleString()}{unit === '일' ? '일' : '개월'}
-            </Text>
+            {summary.peakFlowLabel && (
+              <Space size={8}>
+                <Text type="secondary" style={{ fontSize: 12 }}>가장 바쁜 {unit}</Text>
+                <Tag color="purple" style={{ margin: 0 }}>{summary.peakFlowLabel} · {summary.peakFlowQty.toLocaleString()}건</Tag>
+              </Space>
+            )}
+            {hasAdjustment && (
+              <Space size={8}>
+                <Text type="secondary" style={{ fontSize: 12 }}>재고조정</Text>
+                {summary.totalAdjustmentInbound > 0 && <Tag color="cyan" style={{ margin: 0 }}>입고 +{summary.totalAdjustmentInbound.toLocaleString()}</Tag>}
+                {summary.totalAdjustmentOutbound > 0 && <Tag color="red" style={{ margin: 0 }}>출고 -{summary.totalAdjustmentOutbound.toLocaleString()}</Tag>}
+              </Space>
+            )}
           </Space>
         </Card>
-      </Col>
-    </Row>
-  );
+      </>
+    );
+  };
 
   const renderChart = (rows: AugmentedRow[], height = 360) => {
     if (rows.length === 0) {
@@ -708,9 +731,12 @@ export default function InOutStatusPage() {
         items={[
           {
             key: 'daily',
-            label: '일별',
+            label: '일별 운영',
             children: (
               <>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+                  일자별 입·출고 흐름과 관련 지시서·SKU를 추적합니다.
+                </Text>
                 <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '14px 18px' } }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 24, rowGap: 10 }}>
                     <Space size={8} align="center">
@@ -823,9 +849,12 @@ export default function InOutStatusPage() {
           },
           {
             key: 'monthly',
-            label: '월별',
+            label: '월별 마감',
             children: (
               <>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+                  월 단위 마감 리포트 — 정상·반품·기타 카테고리를 분해해 누계로 보여줍니다.
+                </Text>
                 <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '14px 18px' } }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 24, rowGap: 10 }}>
                     <Space size={8} align="center">

@@ -1,4 +1,4 @@
-import { Card, Space, Typography, Empty, Spin } from 'antd';
+import { Card, Space, Typography, Spin } from 'antd';
 import { Repeat2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useReturnRatio } from '@/hooks/useStreamsQuery';
@@ -8,6 +8,14 @@ const { Text } = Typography;
 
 const COLOR_NORMAL = '#16a34a';  // 일반 — 초록
 const COLOR_RETURN = '#ef4444';  // 반품 — 빨강
+const COLOR_EMPTY = '#e5e7eb';   // 데이터 없음 — 연회색
+
+const EMPTY_BUCKET: ReturnRatioBucket = {
+  normal: 0,
+  return: 0,
+  total: 0,
+  returnRatio: 0,
+};
 
 interface DonutProps {
   title: string;
@@ -15,21 +23,20 @@ interface DonutProps {
 }
 
 function Donut({ title, bucket }: DonutProps) {
-  const data = [
-    { name: '일반', value: bucket.normal },
-    { name: '반품', value: bucket.return },
-  ];
+  const hasData = bucket.total > 0;
+  const data = hasData
+    ? [
+      { name: '일반', value: bucket.normal },
+      { name: '반품', value: bucket.return },
+    ]
+    : [{ name: '데이터 없음', value: 1 }];
   const ratioPct = Math.round((bucket.returnRatio ?? 0) * 1000) / 10;  // 소수 1자리
 
   return (
     <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
       <Text strong style={{ fontSize: 13, color: '#0f172a' }}>{title}</Text>
-      {bucket.total === 0 ? (
-        <div style={{ padding: 24 }}>
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="오늘 데이터 없음" />
-        </div>
-      ) : (
-        <>
+      <>
+        <div style={{ position: 'relative', height: 140 }}>
           <ResponsiveContainer width="100%" height={140}>
             <PieChart>
               <Pie
@@ -39,20 +46,48 @@ function Donut({ title, bucket }: DonutProps) {
                 innerRadius={32} outerRadius={52}
                 paddingAngle={2}
               >
-                <Cell fill={COLOR_NORMAL} />
-                <Cell fill={COLOR_RETURN} />
+                {hasData ? (
+                  <>
+                    <Cell fill={COLOR_NORMAL} />
+                    <Cell fill={COLOR_RETURN} />
+                  </>
+                ) : (
+                  <Cell fill={COLOR_EMPTY} />
+                )}
               </Pie>
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              {hasData && <Tooltip />}
+              {hasData && <Legend wrapperStyle={{ fontSize: 11 }} />}
             </PieChart>
           </ResponsiveContainer>
-          <Text type="secondary" style={{ fontSize: 11 }}>
-            반품 비율 <Text strong style={{ color: COLOR_RETURN }}>{ratioPct}%</Text>
-            <span style={{ margin: '0 6px' }}>·</span>
-            총 {bucket.total}건
-          </Text>
-        </>
-      )}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Text strong style={{ fontSize: 18, color: hasData ? COLOR_RETURN : '#94a3b8' }}>
+              {ratioPct}%
+            </Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              반품 비율
+            </Text>
+          </div>
+        </div>
+        <Text type="secondary" style={{ fontSize: 11 }}>
+          총 {bucket.total}건
+          {!hasData && (
+            <>
+              <span style={{ margin: '0 6px' }}>·</span>
+              오늘 데이터 없음
+            </>
+          )}
+        </Text>
+      </>
     </div>
   );
 }
@@ -63,7 +98,9 @@ function Donut({ title, bucket }: DonutProps) {
  */
 export default function ReturnRatioPanel() {
   const { data, isLoading } = useReturnRatio();
-  const isNotReady = data?.status === 'NOT_READY';
+  const isFallback = data?.status === 'NOT_READY' || !data;
+  const inboundBucket = isFallback ? EMPTY_BUCKET : data.inbound;
+  const outboundBucket = isFallback ? EMPTY_BUCKET : data.outbound;
 
   return (
     <Card
@@ -79,16 +116,20 @@ export default function ReturnRatioPanel() {
     >
       {isLoading && !data ? (
         <div style={{ textAlign: 'center', padding: 24 }}><Spin /></div>
-      ) : isNotReady || !data ? (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={isNotReady ? 'Streams 준비 중…' : '데이터 없음'}
-        />
       ) : (
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Donut title="입고" bucket={data.inbound} />
-          <Donut title="출고" bucket={data.outbound} />
-        </div>
+        <>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Donut title="입고" bucket={inboundBucket} />
+            <Donut title="출고" bucket={outboundBucket} />
+          </div>
+          {isFallback && (
+            <div style={{ marginTop: 8, textAlign: 'center' }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {data?.status === 'NOT_READY' ? 'Streams 준비 중…' : '오늘 데이터 없음'}
+              </Text>
+            </div>
+          )}
+        </>
       )}
     </Card>
   );

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Breadcrumb, Button, Space, Dropdown, theme, App, Badge } from 'antd';
+import { Layout, Menu, Breadcrumb, Button, Space, Dropdown, theme, App } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStompSubscription } from '@/hooks/useStompSubscription';
 import {
@@ -16,7 +16,6 @@ import {
   UnorderedListOutlined,
   FileTextOutlined,
   SettingOutlined,
-  BellOutlined,
   LogoutOutlined,
   UserOutlined,
   LockOutlined,
@@ -36,6 +35,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import FloatingChatbot from '@/components/ai-chatbot/FloatingChatbot';
 import SessionTimer from '@/components/SessionTimer';
+import NotificationBellPopover from '@/components/NotificationBellPopover';
 import MyActivitySider from '@/components/MyActivitySider';
 import '@/pages/warehouse/warehouseLayoutEditor.css';
 
@@ -527,15 +527,6 @@ export default function MainLayout() {
     },
   ];
 
-  // 이벤트 로그 링크
-  const notificationMenuItems: MenuProps['items'] = [
-    {
-      key: 'view-all',
-      label: <span style={{ color: '#1677ff' }}>이벤트 로그 보기</span>,
-      onClick: () => navigate('/common/notifications'),
-    },
-  ];
-
   return (
     <Layout style={{ minHeight: '100vh', background: 'transparent', display: 'flex', flexDirection: 'row' }}>
       <Sider
@@ -611,15 +602,7 @@ export default function MainLayout() {
           />
           <Space size="middle">
             <SessionTimer />
-            <Dropdown
-              menu={{ items: notificationMenuItems }}
-              placement="bottomRight"
-              trigger={['click']}
-            >
-              <Badge count={notificationCount} size="small" overflowCount={99}>
-                <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
-              </Badge>
-            </Dropdown>
+            <NotificationBellPopover count={notificationCount} />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
                 <UserOutlined />

@@ -162,6 +162,37 @@
   padding: 6px 0 !important;
 }
 
+.dashboard-issue-list .ant-list-items,
+.dashboard-shortage-list .ant-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-issue-item.ant-list-item,
+.dashboard-shortage-item.ant-list-item {
+  padding: 14px 14px !important;
+  border: 1px solid #eef2f7 !important;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.dashboard-issue-item.ant-list-item:hover,
+.dashboard-shortage-item.ant-list-item:hover {
+  border-color: #dbe4f0 !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+.dashboard-issue-item .ant-tag,
+.dashboard-shortage-item .ant-tag {
+  border-radius: 999px;
+  padding-inline: 10px;
+  line-height: 28px;
+}
+
 .dashboard-sku-table .ant-table-cell-fix-right-first::after {
   box-shadow: none !important;
 }

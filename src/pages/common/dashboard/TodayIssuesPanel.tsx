@@ -96,6 +96,7 @@ export default function TodayIssuesPanel() {
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="오늘의 이슈 없음" />
       ) : (
         <List
+          className="dashboard-issue-list"
           size="small"
           dataSource={items}
           split={false}
@@ -110,16 +111,16 @@ export default function TodayIssuesPanel() {
               : it.severity === 'medium' ? '주의'
               : '정보';
             return (
-              <List.Item style={{ padding: '10px 6px', borderBottom: '1px solid #f1f5f9' }}>
+              <List.Item className="dashboard-issue-item">
                 <div style={{ width: '100%' }}>
-                  <Space size={6} style={{ marginBottom: 4 }}>
+                  <Space size={6} style={{ marginBottom: 8 }}>
                     <Tag color={tagColor} style={{ margin: 0 }}>{tagLabel}</Tag>
                     <Text strong style={{ fontSize: 13, color }}>{it.title}</Text>
                   </Space>
                   {it.detail && (
-                    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>{it.detail}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>{it.detail}</div>
                   )}
-                  <Button size="small" type="link" onClick={it.onAction} style={{ padding: 0 }}>
+                  <Button size="small" type="link" onClick={it.onAction} style={{ padding: 0, fontWeight: 600 }}>
                     {it.actionLabel} →
                   </Button>
                 </div>

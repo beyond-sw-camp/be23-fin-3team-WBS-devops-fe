@@ -207,12 +207,16 @@ export default function InboundListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allOrders, activeTab, orderStatusFilter, searchKeyword, dateFrom, dateTo]);
 
-  const validWarehouseIds = useMemo(() => new Set(warehouses.map((w) => w.id)), [warehouses]);
-  const warehouseOptions = useMemo(() => warehouses.map((w, index) => ({
+  const inboundWarehouses = useMemo(
+    () => warehouses.filter((w) => (w.warehouse_type ?? 'NORMAL') === 'NORMAL'),
+    [warehouses],
+  );
+  const validWarehouseIds = useMemo(() => new Set(inboundWarehouses.map((w) => w.id)), [inboundWarehouses]);
+  const warehouseOptions = useMemo(() => inboundWarehouses.map((w, index) => ({
     key: `warehouse-${w.id}-${index}`,
-    label: `${w.code} — ${w.name}`,
+    label: `${w.name}${w.code ? ` (${w.code})` : ''}`,
     value: w.id,
-  })), [warehouses]);
+  })), [inboundWarehouses]);
   const selectedManualSupplierId = Form.useWatch('supplierId', manualForm);
   const needManualSupplierForAtp = prefillContext?.source === 'atp' && !selectedManualSupplierId;
 
@@ -284,7 +288,7 @@ export default function InboundListPage() {
 
   useEffect(() => {
     if (whLoading) return;
-    if (warehouses.length === 0) {
+    if (inboundWarehouses.length === 0) {
       setWarehouseId(null);
       return;
     }
@@ -297,18 +301,18 @@ export default function InboundListPage() {
       return;
     }
     localStorage.removeItem(LAST_WH_KEY);
-  }, [whLoading, warehouseId, warehouseOptions, warehouses.length, validWarehouseIds]);
+  }, [whLoading, warehouseId, warehouseOptions, inboundWarehouses.length, validWarehouseIds]);
 
   const openManualModal = (prefill?: ManualInboundPrefill) => {
     setPrefillContext(prefill ?? null);
     prefillUnitPriceFilledRef.current = false;
 
     let nextWarehouseId: string | undefined;
-    if (prefill?.warehouseId) nextWarehouseId = prefill.warehouseId;
+    if (prefill?.warehouseId && validWarehouseIds.has(prefill.warehouseId)) nextWarehouseId = prefill.warehouseId;
     else if (warehouseId && validWarehouseIds.has(warehouseId)) nextWarehouseId = warehouseId;
     else if (prefill?.warehouseName) {
       const targetWh = normalizeText(prefill.warehouseName);
-      const matchedByName = warehouses.find((w) => normalizeText(w.name) === targetWh || normalizeText(w.code) === targetWh);
+      const matchedByName = inboundWarehouses.find((w) => normalizeText(w.name) === targetWh || normalizeText(w.code) === targetWh);
       if (matchedByName) nextWarehouseId = matchedByName.id;
     }
 
@@ -359,7 +363,7 @@ export default function InboundListPage() {
       manualForm.setFieldsValue({ warehouseId: matchedWarehouseId });
       localStorage.setItem(LAST_WH_KEY, matchedWarehouseId);
     }
-  }, [manualModalOpen, prefillContext, warehouses, validWarehouseIds, manualForm]);
+  }, [manualModalOpen, prefillContext, inboundWarehouses, validWarehouseIds, manualForm]);
 
   // 재고 부족 알림에서 넘어온 경우, 모달 자동 오픈 + 프리필
   const prefillConsumedRef = useRef(false);
