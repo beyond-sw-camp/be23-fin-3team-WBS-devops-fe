@@ -17,10 +17,10 @@ const { Title, Text } = Typography;
  * 일반 운영 이력(승인/완료/취소...)은 [감사 로그] 페이지에서 담당. 역할 분리.
  */
 
-const ALERT_ACTIONS = ['출고불가발생', '출고불가부분해소', '출고불가해소', '재고부족발생', '재고부족해소'] as const;
-type AlertAction = (typeof ALERT_ACTIONS)[number];
+export const ALERT_ACTIONS = ['출고불가발생', '출고불가부분해소', '출고불가해소', '재고부족발생', '재고부족해소'] as const;
+export type AlertAction = (typeof ALERT_ACTIONS)[number];
 
-const ACTION_CONFIG: Record<AlertAction, { color: string; label: string }> = {
+export const ACTION_CONFIG: Record<AlertAction, { color: string; label: string }> = {
   '출고불가발생':     { color: 'red',     label: '출고불가' },
   '출고불가부분해소': { color: 'gold',    label: '출고불가 부분해소' },
   '출고불가해소':     { color: 'green',   label: '출고불가 해소' },
@@ -28,7 +28,7 @@ const ACTION_CONFIG: Record<AlertAction, { color: string; label: string }> = {
   '재고부족해소':     { color: 'cyan',    label: '재고부족 해소' },
 };
 
-interface AlertRow {
+export interface AlertRow {
   id: string;
   action: AlertAction;
   title: string;
@@ -40,7 +40,7 @@ interface AlertRow {
 }
 
 /** audit_log.request_body JSON 파싱 — 알림 payload 구조에 맞춰 row 변환 */
-function toAlertRow(log: AuditLog): AlertRow | null {
+export function toAlertRow(log: AuditLog): AlertRow | null {
   const action = log.action as AlertAction;
   if (!ALERT_ACTIONS.includes(action)) return null;
   let payload: Record<string, unknown> = {};
@@ -100,7 +100,7 @@ function toAlertRow(log: AuditLog): AlertRow | null {
   };
 }
 
-function fmtDateTime(iso: string): string {
+export function fmtDateTime(iso: string): string {
   const m = iso.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
   return m ? `${m[1]} ${m[2]}` : iso;
 }

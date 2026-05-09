@@ -216,21 +216,22 @@ export default function DashboardPage() {
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="안전재고 미달 없음" />
       ) : (
         <List
+          className="dashboard-shortage-list"
           size="small"
           dataSource={shortageList}
           split={false}
           renderItem={(item) => (
-            <List.Item style={{ padding: '8px 0', borderBlockEnd: '1px solid #f0f3f7' }}>
+            <List.Item className="dashboard-shortage-item">
               <div style={{ width: '100%' }}>
-                <Text style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#0f172a', whiteSpace: 'normal', wordBreak: 'break-word', marginBottom: 6, lineHeight: 1.35 }}>
+                <Text style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#0f172a', whiteSpace: 'normal', wordBreak: 'break-word', marginBottom: 8, lineHeight: 1.35 }}>
                   {item.product_name}
                 </Text>
-                <Space size={6} wrap>
-                  <Tag color="red" style={{ margin: 0 }}>{item.sku}</Tag>
+                <Space size={8} wrap>
+                  <Tag color="red" style={{ margin: 0, fontWeight: 600 }}>{item.sku}</Tag>
                   {item.shortage_qty > 0 ? (
-                    <Text type="danger" strong style={{ fontSize: 12 }}>부족 {item.shortage_qty}</Text>
+                    <Text type="danger" strong style={{ fontSize: 13 }}>부족 {item.shortage_qty}</Text>
                   ) : (
-                    <Text type="warning" strong style={{ fontSize: 12 }}>임박</Text>
+                    <Text type="warning" strong style={{ fontSize: 13 }}>임박</Text>
                   )}
                 </Space>
               </div>
@@ -243,7 +244,7 @@ export default function DashboardPage() {
 
   const PANELS: Record<DashboardPanelId, { name: string; node: ReactNode; fullWidth?: boolean }> = {
     pendingOrders:    { name: '처리 필요 지시서',       node: <PendingOrdersPanel /> },
-    activeOrders:     { name: '실시간 진행 상황',       node: <ActiveOrdersPanel /> },
+    activeOrders:     { name: '실시간 작업 진행 상황',  node: <ActiveOrdersPanel /> },
     minimap:          { name: '창고 미니맵',            node: minimapNode },
     weeklyTrend:      { name: '최근 7일 입·출고 추이',  node: <WeeklyTrendChart /> },
     hourlyThroughput: { name: '시간별 처리량 (지난 24h)', node: <HourlyThroughputChart /> },
