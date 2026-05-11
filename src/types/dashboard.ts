@@ -114,6 +114,7 @@ export interface PendingOrderItem {
   item_count: number;
   total_qty: number;
   created_at: string;
+  assigned_to?: string | null;
 }
 
 export interface PendingOrderResponse {

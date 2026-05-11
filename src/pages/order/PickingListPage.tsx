@@ -15,6 +15,7 @@ import { useProductFilterForOrder } from '@/hooks/useProductFilterForOrder';
 import { ProductFilterTriggerButton, ProductFilterStatusBar } from '@/components/ProductSearch';
 import WaveCreateModal from '@/components/WaveCreateModal';
 import PermissionButton from '@/components/PermissionButton';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import { useUserNameMap, resolveUserName } from '@/hooks/useUserNameMap';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
@@ -151,12 +152,14 @@ export default function PickingListPage() {
     { title: '피킹번호', dataIndex: 'picking_no', key: 'picking_no', width: 140 },
     { title: '창고', dataIndex: 'warehouse_name', key: 'warehouse_name', width: 130 },
     {
-      title: '담당자', key: 'assignee', width: 100,
-      render: (_, r) => {
-        if (r.assignee && r.assignee !== '-') return r.assignee;
-        if (r.assigned_to) return resolveUserName(userMap, r.assigned_to);
-        return '-';
-      },
+      title: '배정 작업자', key: 'assignee', width: 130,
+      render: (_, r) => (
+        <AssignedWorkerCell
+          assignedTo={r.assigned_to ?? null}
+          assignedToName={r.assignee && r.assignee !== '-' ? r.assignee : null}
+          userMap={userMap}
+        />
+      ),
     },
     { title: '출고지시서 수', dataIndex: 'outbound_count', key: 'outbound_count', width: 120, align: 'center' },
     { title: '상태', dataIndex: 'status', key: 'status', width: 100, align: 'center', render: (v: PickingStatus) => <Tag color={PICKING_STATUS_CONFIG[v].color}>{PICKING_STATUS_CONFIG[v].label}</Tag> },

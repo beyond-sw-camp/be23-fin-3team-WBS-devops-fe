@@ -25,6 +25,7 @@ import {
 } from '@/api/inbound';
 import type { Product } from '@/types/product';
 import PermissionButton from '@/components/PermissionButton';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -513,6 +514,10 @@ export default function InboundListPage() {
     { title: '창고', dataIndex: 'warehouse_name', key: 'warehouse_name', width: 120 },
     { title: '입고예정일', dataIndex: 'expected_date', key: 'expected_date', width: 110, align: 'center' },
     { title: '상태', dataIndex: 'status', key: 'status', width: 80, align: 'center', render: (v: OrderStatus) => <Tag color={ORDER_STATUS_CONFIG[v].color}>{ORDER_STATUS_CONFIG[v].label}</Tag> },
+    {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
+    },
     { title: '품목수', dataIndex: 'total_items', key: 'total_items', width: 70, align: 'center', render: (v: number) => v ?? '-' },
     { title: '총수량', dataIndex: 'total_qty', key: 'total_qty', width: 80, align: 'right', render: (v: number) => v?.toLocaleString() ?? '-' },
     {

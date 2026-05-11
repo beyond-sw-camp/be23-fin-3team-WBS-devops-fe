@@ -25,6 +25,7 @@ import { useProducts, useStores } from '@/hooks/useMasterQuery';
 import { getSuggestedLocations, type SuggestedLocation } from '@/api/inventory';
 import type { WarehouseType } from '@/types/warehouse';
 import PermissionButton from '@/components/PermissionButton';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import { extractApiErrorMessage, isCapacityExceededError } from '@/utils/apiError';
 
 const { Title } = Typography;
@@ -806,6 +807,10 @@ export default function EtcInOutPage() {
     {
       title: '상태', dataIndex: 'status', key: 'status', width: 90, align: 'center',
       render: (v: EtcInOutStatus) => <Tag color={statusConfig[v]?.color}>{statusConfig[v]?.label ?? v}</Tag>,
+    },
+    {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
     },
     {
       title: '사유', key: 'reason', width: 130,

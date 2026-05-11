@@ -5,6 +5,8 @@ import type { ColumnsType } from 'antd/es/table';
 import { useIntegratedOrders } from '@/hooks/useDashboardQuery';
 import type { PendingOrderItem, PendingOrderType, PendingOrderCategory } from '@/types/dashboard';
 import { ORDER_STATUS_CONFIG } from '@/types/order';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
+import { useUserNameMap } from '@/hooks/useUserNameMap';
 
 const { Title, Text } = Typography;
 
@@ -104,6 +106,7 @@ export default function IntegratedOrdersPage() {
   const category = TAB_TO_CATEGORY[activeTab];
 
   const { data, isLoading } = useIntegratedOrders({ type, category, status: 'ALL', page, size });
+  const userMap = useUserNameMap();
 
   // 탭별 카운트 — 표시용 합계만 별도 호출 없이 현재 응답 total 만 표기
   // (정확한 탭별 카운트는 BE 콜이 N번 필요하므로 생략 — 현재 탭 total 만)
@@ -153,6 +156,10 @@ export default function IntegratedOrdersPage() {
       },
     },
     {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} userMap={userMap} />,
+    },
+    {
       title: '마감일', key: 'deadline', width: 150,
       render: (_, r) => (
         <span>
@@ -169,7 +176,7 @@ export default function IntegratedOrdersPage() {
     },
     { title: '등록일', dataIndex: 'created_at', key: 'created_at', width: 130,
       render: (v: string) => v?.slice(0, 10) ?? '-' },
-  ], []);
+  ], [userMap]);
 
   return (
     <div className="order-list-tone" style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>

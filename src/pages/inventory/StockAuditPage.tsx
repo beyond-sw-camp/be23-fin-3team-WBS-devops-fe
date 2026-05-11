@@ -13,6 +13,7 @@ import { ProductFilterTriggerButton, ProductFilterStatusBar } from '@/components
 import { useWarehouses } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import PermissionButton from '@/components/PermissionButton';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import { useAuth } from '@/hooks/useAuth';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
@@ -188,6 +189,10 @@ export default function StockAuditPage() {
     {
       title: '상태', dataIndex: 'status', key: 'status', width: 100, align: 'center',
       render: (v: StockCountStatus) => <Tag color={statusConfig[v]?.color}>{statusConfig[v]?.label ?? v}</Tag>,
+    },
+    {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
     },
     { title: '비고', dataIndex: 'note', key: 'note', ellipsis: true },
     { title: '생성일', dataIndex: 'created_at', key: 'created_at', width: 110 },
