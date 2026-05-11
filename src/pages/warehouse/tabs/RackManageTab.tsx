@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Space, Tag, Modal, Form, Select, Input, InputNumber, App, Card, Progress, Empty, Popover } from 'antd';
+import { Table, Button, Space, Tag, Modal, Form, Select, Input, InputNumber, App, Card, Progress, Empty, Popover, Tooltip } from 'antd';
 import { EditOutlined, StopOutlined, LayoutOutlined, PlayCircleOutlined, QrcodeOutlined, PrinterOutlined } from '@ant-design/icons';
 import RowActionMenu from '@/components/RowActionMenu';
 import type { ColumnsType } from 'antd/es/table';
@@ -79,7 +79,10 @@ export default function RackManageTab({ warehouseId }: { warehouseId: string }) 
 
   const columns: ColumnsType<Rack> = [
     { title: '담당 입고처', key: 'supplier_name', width: 130, render: (_, r) => { const v = r.supplier_name || '미지정'; return <Tag color={tagColorByKey(v)}>{v}</Tag>; } },
-    { title: '랙코드', dataIndex: 'code', key: 'code', width: 100 },
+    { title: '랙코드', dataIndex: 'code', key: 'code', width: 100, render: (code: string) => {
+      const short = code ? code.split('-').slice(-2).join('-') : '-';
+      return <Tooltip title={code}><span>{short}</span></Tooltip>;
+    } },
     { title: '랙명', dataIndex: 'name', key: 'name', width: 120 },
     { title: '최대수용', dataIndex: 'max_capacity', key: 'max_capacity', width: 80, align: 'right' },
     { title: '층수', dataIndex: 'level_no', key: 'level_no', width: 60, align: 'center' },
