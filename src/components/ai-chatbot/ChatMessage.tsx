@@ -205,15 +205,43 @@ function buildCardView(intent: string, row: WorkRow) {
     };
   }
 
-  const workType = textValue(row.work_type, '');
+  const workRoute = resolveWorkRoute(row);
   return {
     title: `${textValue(row.work_type, '업무')} ${textValue(row.document_no, '지시서')}`,
     status: textValue(row.status),
     description: `${textValue(row.warehouse_name, '창고 미확인')}에서 처리해야 합니다.`,
     details: [`처리일 ${textValue(row.scheduled_date, '-')}`],
-    href: workType === '입고' ? '/order/inbound' : workType === '출고' ? '/order/outbound' : '/order/incomplete',
-    actionLabel: workType === '입고' ? '입고 지시서로 이동' : workType === '출고' ? '출고 지시서로 이동' : '미처리 지시서로 이동',
+    href: workRoute.href,
+    actionLabel: workRoute.actionLabel,
   };
+}
+
+function resolveWorkRoute(row: WorkRow) {
+  const workType = textValue(row.work_type, '').replace(/\s/g, '');
+  const documentNo = textValue(row.document_no, '').toUpperCase();
+
+  if (documentNo.startsWith('IB-') || workType.includes('입고검수')) {
+    return { href: '/order/inbound', actionLabel: '입고 지시서로 이동' };
+  }
+  if (documentNo.startsWith('PO-') || workType.includes('적치')) {
+    return { href: '/order/inbound/placements', actionLabel: '적치 지시서로 이동' };
+  }
+  if (documentNo.startsWith('PL-') || workType.includes('피킹')) {
+    return { href: '/order/picking', actionLabel: '피킹 리스트로 이동' };
+  }
+  if (documentNo.startsWith('OB-') || workType.includes('출고')) {
+    return { href: '/order/outbound', actionLabel: '출고 지시서로 이동' };
+  }
+  if (documentNo.startsWith('TR-') || workType.includes('이동')) {
+    return { href: '/order/transfer', actionLabel: '이동 지시서로 이동' };
+  }
+  if (documentNo.startsWith('SC-') || workType.includes('재고실사')) {
+    return { href: '/inventory/stock-count', actionLabel: '재고 실사로 이동' };
+  }
+  if (documentNo.startsWith('EO-') || workType.includes('기타입출고')) {
+    return { href: '/etc-inout/in', actionLabel: '기타 입출고로 이동' };
+  }
+  return { href: '/order/incomplete', actionLabel: '미처리 지시서로 이동' };
 }
 
 function fallbackSummary(intent: string, rows: WorkRow[]) {

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Button, Card, Empty, Progress, Segmented, Space, Statistic, Table, Tag, Tooltip, Typography,
+  Alert, Button, Card, Empty, Progress, Segmented, Space, Statistic, Table, Tag, Tooltip, Typography,
 } from 'antd';
 import {
   ApartmentOutlined, InboxOutlined, ReloadOutlined, SwapOutlined, TeamOutlined, UserSwitchOutlined,
@@ -368,7 +368,18 @@ export default function AutoAssignmentPage() {
       render: (v: number) => (v > 0 ? v.toLocaleString() : '-'),
     },
     { title: '발생일', dataIndex: 'createdAt', key: 'createdAt', width: 130, render: fmtDate },
-    { title: '자동배정 시점', dataIndex: 'trigger', key: 'trigger', ellipsis: true },
+    {
+      title: '자동배정 시점',
+      dataIndex: 'trigger',
+      key: 'trigger',
+      width: 320,
+      render: (v: string) => (
+        <div style={{ minWidth: 260, maxWidth: 320, lineHeight: 1.45, whiteSpace: 'normal', wordBreak: 'keep-all' }}>
+          <Tag color="blue" style={{ marginBottom: 4 }}>상태 감지</Tag>
+          <div>{v}</div>
+        </div>
+      ),
+    },
   ];
 
   const workerColumns: ColumnsType<WorkerLoadRow> = [
@@ -423,6 +434,13 @@ export default function AutoAssignmentPage() {
       </div>
 
       <Card size="small" styles={{ body: { padding: 16 } }}>
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message="자동배정은 각 작업이 필요한 상태로 바뀌는 순간 실행되고, 작업자의 마지막 위치를 1순위로 본 뒤 활성 작업 수가 적은 작업자에게 배정됩니다."
+        />
+
         <Segmented
           value={view}
           onChange={(v) => setView(v as ViewKey)}
@@ -457,7 +475,7 @@ export default function AutoAssignmentPage() {
             loading={isLoading}
             locale={{ emptyText: <Empty image={<InboxOutlined style={{ fontSize: 32, color: '#cbd5e1' }} />} description="현재 배정된 활성 작업이 없습니다" /> }}
             pagination={{ pageSize: 12, showSizeChanger: false }}
-            scroll={{ x: 1080 }}
+            scroll={{ x: 1340 }}
           />
         )}
       </Card>
