@@ -468,6 +468,24 @@ export default function LayoutEditTab({ warehouseId, onZoneDrillDown, readonly =
   }, []);
 
   const doDelete = () => {
+    const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
+    const blocked = selectedShapes
+      .filter((s) => s.kind === 'zone')
+      .map((s) => {
+        const zid = s.data?.zone_id != null ? String(s.data.zone_id) : '';
+        if (!zid) return null;
+        const { hasInventory, occupiedRackCodes } = zoneInventorySummary(inventoryByRack, zid);
+        if (!hasInventory) return null;
+        return { zoneName: s.label || zid, occupiedRackCodes };
+      })
+      .filter((v): v is { zoneName: string; occupiedRackCodes: string[] } => v !== null);
+    if (blocked.length > 0) {
+      const detail = blocked
+        .map((b) => `${b.zoneName} (${b.occupiedRackCodes.slice(0, 3).join(', ')}${b.occupiedRackCodes.length > 3 ? ` 외 ${b.occupiedRackCodes.length - 3}개` : ''})`)
+        .join(' / ');
+      message.error(`재고가 남아있어 삭제할 수 없는 구역이 있습니다: ${detail}. 재고를 비운 뒤 다시 시도하세요.`);
+      return;
+    }
     const n = shapes.filter((s) => !selectedIds.has(s.id));
     push(n);
     setSelectedIds(new Set());
