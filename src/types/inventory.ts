@@ -84,6 +84,8 @@ export interface StockCountOrder {
   warehouse_name: string;
   status: StockCountStatus;
   created_by: string;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
   note: string;
   created_at: string;
   completed_at: string | null;

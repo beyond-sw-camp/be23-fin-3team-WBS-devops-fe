@@ -16,6 +16,7 @@ interface BeInboundReceiptRes { id: string; inboundOrderId: string; orderNo: str
 interface BePlacementItemRes {
   id: string; placementOrderId: string; inboundOrderId: string;
   warehouseId: string | null;
+  assignedTo?: string | null;
   orderNo: string | null; placementNo: string | null; seq: number;
   sku: string | null; productName: string | null; qty: number;
   lotNo: string | null; zoneName: string | null; rackCode: string | null;
@@ -132,6 +133,7 @@ function mapBePlacementItem(b: BePlacementItemRes): PlacementItem {
     id: b.id, placement_order_id: b.placementOrderId,
     inbound_order_id: b.inboundOrderId, order_no: b.orderNo ?? undefined,
     warehouse_id: b.warehouseId ?? undefined,
+    assigned_to: b.assignedTo ?? undefined,
     placement_no: b.placementNo ?? undefined, seq: b.seq,
     sku: b.sku ?? '-', product_name: b.productName ?? '-',
     product_id: b.productId ?? undefined,
