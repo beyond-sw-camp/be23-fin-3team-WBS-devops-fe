@@ -536,8 +536,13 @@ export default function EtcInOutPage() {
     const processedQty = Math.max(0, newQty);
     updateItemRow(key, { processedQty, qty: processedQty + (row.defectQty ?? 0) });
     if (!row.productId) return;
-    if (row.availableCapacity != null && processedQty > row.availableCapacity && row.suggestions) {
-      showCapacityOverflowModal(key, processedQty, row.suggestions);
+    // availableCapacity 가 이미 캐시돼있으면 즉시 검사, 아니면 새 qty 로 다시 fetch (fetch 가 모달 트리거 포함)
+    if (row.availableCapacity != null && row.suggestions) {
+      if (processedQty > row.availableCapacity) {
+        showCapacityOverflowModal(key, processedQty, row.suggestions);
+      }
+    } else {
+      void fetchSuggestionsForRow(key, row.productId, processedQty);
     }
   };
 
@@ -895,10 +900,17 @@ export default function EtcInOutPage() {
         <Select
           placeholder="로케이션 선택"
           value={row.locationId || undefined}
-          options={inboundLocationOptions.map((o) => ({
-            value: o.value,
-            label: o.loc.location_code,
-          }))}
+          options={inboundLocationOptions.map((o) => {
+            const cap = o.loc.max_capacity;
+            const used = o.loc.total_qty ?? 0;
+            const remain = cap != null ? Math.max(0, cap - used) : null;
+            const capPart = remain != null ? ` · 남은 ${remain.toLocaleString()}` : ' · 무제한';
+            const ownerPart = o.loc.product_name ? ` (${o.loc.product_name} 보관중)` : '';
+            return {
+              value: o.value,
+              label: `${o.loc.location_code}${capPart}${ownerPart}`,
+            };
+          })}
           onChange={(value) => handleInboundLocationChange(row.key, value)}
           showSearch
           optionFilterProp="label"

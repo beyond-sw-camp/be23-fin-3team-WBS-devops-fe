@@ -2,11 +2,12 @@ import { useMemo, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Typography, Table, Card, Descriptions, Steps, Button, Space, Tag, App, Result, Spin,
-  InputNumber, Popover, Row, Col,
+  InputNumber, Popover, Row, Col, Tooltip, Dropdown, Drawer,
 } from 'antd';
 import {
   ArrowLeftOutlined, CheckOutlined, SwapOutlined, PlayCircleOutlined, PrinterOutlined, QrcodeOutlined,
-  InboxOutlined, CheckCircleOutlined, ClockCircleOutlined, WarningOutlined,
+  InboxOutlined, CheckCircleOutlined, ClockCircleOutlined, WarningOutlined, EnvironmentOutlined,
+  DownOutlined, HistoryOutlined,
 } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
 import type { ColumnsType } from 'antd/es/table';
@@ -14,6 +15,7 @@ import type { TransferOrderItem, TransferOrderStatus, TransferItemStatus } from 
 import {
   useTransferOrder, useTransferItems, useApproveTransfer, useCompleteTransfer, useProcessTransferItem,
 } from '@/hooks/useOrderQuery';
+import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import OrderQrBadge from '@/components/OrderQrBadge';
 import PrintDocument from '@/components/PrintDocument';
 import PermissionButton from '@/components/PermissionButton';
@@ -28,6 +30,14 @@ import { showStompToast } from '@/lib/stompMessages';
 import { getClientIdFromToken } from '@/utils/jwt';
 
 const { Title } = Typography;
+
+/** 표시용 — 긴 위치 코드(`LC-RK-...-LEH-002-02`)에서 끝 3토큰만 노출 (`LEH-002-02`) */
+function locationOnly(raw: string | null | undefined): string {
+  if (!raw || raw === '-') return '-';
+  const parts = String(raw).split('-').filter(Boolean);
+  if (parts.length <= 3) return raw;
+  return parts.slice(-3).join('-');
+}
 
 const STATUS_CONFIG: Record<TransferOrderStatus, { color: string; label: string }> = {
   draft: { color: 'default', label: '초안' },
@@ -95,8 +105,19 @@ export default function TransferDetailPage() {
   const printRef = useRef<HTMLDivElement>(null);
   const userMap = useUserNameMap();
 
+  // 출발/도착 창고의 랙 데이터로 location_id → location_code 매핑 — BE가 코드를 안 내려주는 fallback
+  const { data: fromInv } = useInventoryByRack(order?.from_warehouse_id ?? null);
+  const { data: toInv } = useInventoryByRack(order?.to_warehouse_id ?? null);
+  const locationCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    fromInv?.racks.forEach((rack) => rack.locations.forEach((loc) => map.set(loc.location_id, loc.location_code)));
+    toInv?.racks.forEach((rack) => rack.locations.forEach((loc) => map.set(loc.location_id, loc.location_code)));
+    return map;
+  }, [fromInv, toInv]);
+
   // 품목별 처리 입력 상태
   const [processInput, setProcessInput] = useState<Record<string, { goodQty: number; defectQty: number }>>({});
+  const [txDrawerOpen, setTxDrawerOpen] = useState(false);
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -188,6 +209,43 @@ export default function TransferDetailPage() {
       ),
     },
     {
+      title: tableHeaderTitle('로케이션 (출발 → 도착)'), key: 'location', width: 320,
+      onHeaderCell: () => ({ style: tableHeaderCellStyle }),
+      render: (_, r) => {
+        const fromFull = r.from_location_code ?? locationCodeMap.get(r.from_location_id) ?? '-';
+        const toFull = r.to_location_code ?? locationCodeMap.get(r.to_location_id) ?? '-';
+        const fromCode = locationOnly(fromFull);
+        const toCode = locationOnly(toFull);
+        const goLocation = (warehouseId: string | undefined, locationId: string, locationCode: string) => {
+          if (!warehouseId || !locationId) return;
+          const params = new URLSearchParams({ wh: warehouseId, tab: 'rack-inventory', locationId });
+          if (locationCode && locationCode !== '-') params.set('locationCode', locationCode);
+          navigate(`/warehouse/monitoring?${params.toString()}`);
+        };
+        return (
+          <Space size={4} wrap={false}>
+            <Tooltip title={fromFull}>
+              <Tag color="blue" style={{ margin: 0, fontWeight: 600, fontSize: 12 }}>{fromCode}</Tag>
+            </Tooltip>
+            <Tooltip title="출발 위치 조회">
+              <Button size="small" type="text" icon={<EnvironmentOutlined />}
+                onClick={() => goLocation(order?.from_warehouse_id, r.from_location_id, fromFull)}
+                disabled={!r.from_location_id} style={{ color: '#1677ff' }} />
+            </Tooltip>
+            <span style={{ color: '#cbd5e1', fontSize: 12 }}>→</span>
+            <Tooltip title={toFull}>
+              <Tag color="blue" style={{ margin: 0, fontWeight: 600, fontSize: 12 }}>{toCode}</Tag>
+            </Tooltip>
+            <Tooltip title="도착 위치 조회">
+              <Button size="small" type="text" icon={<EnvironmentOutlined />}
+                onClick={() => goLocation(order?.to_warehouse_id, r.to_location_id, toFull)}
+                disabled={!r.to_location_id} style={{ color: '#1677ff' }} />
+            </Tooltip>
+          </Space>
+        );
+      },
+    },
+    {
       title: tableHeaderTitle('지시수량'), dataIndex: 'ordered_qty', key: 'ordered_qty', width: 100, align: 'right',
       onHeaderCell: () => ({ style: tableHeaderCellStyle }),
       render: (v: number) => <span style={{ fontWeight: 500, color: '#334155' }}>{v.toLocaleString()}</span>,
@@ -206,7 +264,7 @@ export default function TransferDetailPage() {
       title: tableHeaderTitle('상태'), dataIndex: 'status', key: 'status', width: 80, align: 'center',
       onHeaderCell: () => ({ style: tableHeaderCellStyle }),
       render: (v: TransferItemStatus) => {
-        const cfg = ITEM_STATUS[v];
+        const cfg = ITEM_STATUS[v] ?? { color: '#94a3b8', label: v ?? '-' };
         return <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: cfg.color, background: `${cfg.color}12` }}>{cfg.label}</span>;
       },
     },
@@ -238,23 +296,77 @@ export default function TransferDetailPage() {
     <>
       <div className="no-print" style={{ color: '#334155', fontSize: 14, lineHeight: 1.4 }}>
         {/* ── 헤더 ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 18, gap: 10 }}>
-          <Space size={8} align="center">
-            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/order/transfer')}>목록</Button>
-            <Title level={4} style={{ margin: 0, color: '#0f172a' }}>{order.order_no}</Title>
-            <Tag color={STATUS_CONFIG[status]?.color}>{STATUS_CONFIG[status]?.label}</Tag>
-            <Popover content={<OrderQrBadge value={`transfer:${order.id}`} label={order.order_no} title="이동 지시서" size={160} />} trigger="click" placement="bottomLeft">
-              <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b', fontSize: 18 }} />
-            </Popover>
-          </Space>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 }}>
-            <Button icon={<PrinterOutlined />} onClick={() => { if (!printRef.current) { message.warning('잠시 후 다시 시도해 주세요.'); return; } void handlePrint(); }}>출력</Button>
-            {status === 'draft' && (
-              <PermissionButton resource="TRANSFER" action="APPROVE" type="primary" icon={<CheckOutlined />} onClick={handleApprove} loading={approveMutation.isPending}>승인</PermissionButton>
-            )}
-            {canProcess && (
-              <PermissionButton resource="TRANSFER" action="UPDATE" type="primary" icon={<SwapOutlined />} onClick={handleComplete} loading={completeMutation.isPending}>이동 마감</PermissionButton>
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 18, gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap', gap: 8, minWidth: 0 }}>
+            <Space size={8} align="center" style={{ minWidth: 0, flexShrink: 1, overflow: 'hidden' }}>
+              <Tooltip title="목록으로">
+                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/order/transfer')} />
+              </Tooltip>
+              <Tooltip title="이동지시서">
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    color: '#6366f1',
+                    fontSize: 13,
+                    padding: '3px 7px',
+                    borderRadius: 4,
+                    background: '#eef2ff',
+                    border: '1px solid #c7d2fe',
+                    flexShrink: 0,
+                  }}
+                >
+                  <SwapOutlined style={{ fontSize: 13 }} />
+                </span>
+              </Tooltip>
+              <Title level={4} style={{ margin: 0, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.order_no}</Title>
+              <Tag color={STATUS_CONFIG[status]?.color} style={{ flexShrink: 0 }}>{STATUS_CONFIG[status]?.label}</Tag>
+              <Popover content={<OrderQrBadge value={`transfer:${order.id}`} label={order.order_no} title="이동 지시서" size={160} />} trigger="click" placement="bottomLeft">
+                <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b', fontSize: 18, flexShrink: 0 }} />
+              </Popover>
+            </Space>
+
+            <Space size={6} wrap style={{ flexShrink: 0 }}>
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'order',
+                      icon: <PrinterOutlined />,
+                      label: '이동지시서 출력',
+                      onClick: () => {
+                        if (!printRef.current) { message.warning('잠시 후 다시 시도해 주세요.'); return; }
+                        void handlePrint();
+                      },
+                    },
+                  ],
+                }}
+              >
+                <Button icon={<PrinterOutlined />}>출력 <DownOutlined /></Button>
+              </Dropdown>
+
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'tx',
+                      icon: <HistoryOutlined />,
+                      label: '재고 이력',
+                      onClick: () => setTxDrawerOpen(true),
+                    },
+                  ],
+                }}
+              >
+                <Button>더보기 <DownOutlined /></Button>
+              </Dropdown>
+
+              {status === 'draft' && (
+                <PermissionButton resource="TRANSFER" action="APPROVE" type="primary" icon={<CheckOutlined />} onClick={handleApprove} loading={approveMutation.isPending}>승인</PermissionButton>
+              )}
+              {canProcess && (
+                <PermissionButton resource="TRANSFER" action="UPDATE" type="primary" icon={<SwapOutlined />} onClick={handleComplete} loading={completeMutation.isPending}>이동 마감</PermissionButton>
+              )}
+            </Space>
           </div>
         </div>
 
@@ -309,8 +421,18 @@ export default function TransferDetailPage() {
             onRow={() => ({ style: { height: 56 } })} />
         </div>
 
-        <InventoryTransactionPanel refId={orderId} refType="transfer_order" title="이동 재고 변동 이력" />
       </div>
+
+      <Drawer
+        title="이동 재고 변동 이력"
+        placement="right"
+        width={820}
+        open={txDrawerOpen}
+        onClose={() => setTxDrawerOpen(false)}
+        destroyOnHidden
+      >
+        <InventoryTransactionPanel refId={orderId} refType="transfer_order" title="이동 재고 변동 이력" />
+      </Drawer>
 
       <div className="print-only">
         <PrintDocument
@@ -332,12 +454,16 @@ export default function TransferDetailPage() {
           columns={[
             { label: 'No', key: 'no', align: 'center', width: 36 },
             { label: '상품', key: 'product_name' },
+            { label: '출발 로케이션', key: 'from_location', width: 110 },
+            { label: '도착 로케이션', key: 'to_location', width: 110 },
             { label: '지시수량', key: 'ordered_qty', numeric: true, width: 80, bold: true },
             { label: '처리수량', key: 'processed_qty', numeric: true, width: 80 },
           ]}
           data={items.map((i, idx) => ({
             no: idx + 1,
             product_name: i.product_name,
+            from_location: i.from_location_code ?? locationCodeMap.get(i.from_location_id) ?? '-',
+            to_location: i.to_location_code ?? locationCodeMap.get(i.to_location_id) ?? '-',
             ordered_qty: i.ordered_qty,
             processed_qty: i.processed_qty,
           }))}

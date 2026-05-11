@@ -416,6 +416,8 @@ export interface TransferOrderItem {
   product_name: string;
   from_location_id: string;
   to_location_id: string;
+  from_location_code: string | null;
+  to_location_code: string | null;
   ordered_qty: number;
   processed_qty: number;
   defect_qty: number;
