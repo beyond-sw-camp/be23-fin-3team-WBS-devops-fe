@@ -30,6 +30,7 @@ import {
 } from '@ant-design/icons';
 import type { Warehouse } from '@/types/warehouse';
 import { useWarehouseDetail, useUpdateWarehouse, useZonesByWarehouse, useRacks } from '@/hooks/useWarehouseQuery';
+import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import './warehouseInfoTab.css';
 
 const { Paragraph, Text } = Typography;
@@ -59,13 +60,30 @@ export default function WarehouseInfoTab({ warehouseId }: { warehouseId: string 
   const { data: wh, isLoading } = useWarehouseDetail(warehouseId);
   const { data: zones = [] } = useZonesByWarehouse(warehouseId);
   const { data: racks = [] } = useRacks({ warehouseId });
+  const { data: inventoryByRack } = useInventoryByRack(warehouseId);
   const updateMutation = useUpdateWarehouse();
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
   const { message } = App.useApp();
 
-  const util = wh?.rack_utilization_percent;
-  const utilNum = util == null ? null : Math.min(100, Math.max(0, util));
+  const utilNum = useMemo(() => {
+    if (wh?.rack_utilization_percent != null) {
+      return Math.min(100, Math.max(0, wh.rack_utilization_percent));
+    }
+    const groups = inventoryByRack?.racks;
+    if (!groups || groups.length === 0) return null;
+    let used = 0;
+    let cap = 0;
+    for (const g of groups) {
+      for (const loc of g.locations) {
+        if (loc.max_capacity == null || loc.max_capacity <= 0) continue;
+        cap += loc.max_capacity;
+        used += loc.total_qty;
+      }
+    }
+    if (cap === 0) return null;
+    return Math.min(100, Math.max(0, Math.round((used / cap) * 100)));
+  }, [wh?.rack_utilization_percent, inventoryByRack]);
 
   const badges = useMemo(() => (wh ? healthStatusBadges(wh, utilNum) : []), [wh, utilNum]);
   const categoryTop = useMemo(() => {
