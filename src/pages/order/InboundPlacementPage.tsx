@@ -281,7 +281,7 @@ export default function InboundPlacementPage() {
           <Space size={8} align="center">
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/order/inbound/${id}`)}>지시서</Button>
             <Title level={4} style={{ margin: 0, color: '#0f172a' }}>적치 지시서 — {order.order_no}</Title>
-            <Popover content={<OrderQrBadge value={`placement:${order.id}`} label={order.order_no} title="적치 지시서" size={160} />} trigger="click">
+            <Popover content={<OrderQrBadge value={`inbound:${order.id}`} label={order.order_no} title="입고 지시서" size={160} />} trigger="click">
               <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b', fontSize: 18 }} />
             </Popover>
           </Space>
@@ -352,6 +352,9 @@ export default function InboundPlacementPage() {
               title={
                 <Space>
                   <span style={{ fontWeight: 600 }}>{po.placement_no}</span>
+                  <Popover content={<OrderQrBadge value={`placement:${po.id}`} label={po.placement_no} title="적치 지시서" size={160} />} trigger="click">
+                    <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b' }} />
+                  </Popover>
                   <Tag color={poCfg?.color}>{poCfg?.label}</Tag>
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     {po.placed_items}/{po.total_items} 완료
@@ -410,7 +413,9 @@ export default function InboundPlacementPage() {
         <PrintDocument
           ref={printRef} title="적치 지시서"
           subtitle={`${order.vendor_name} · ${order.warehouse_name}`}
-          orderNo={order.order_no} qrValue={`placement:${order.id}`} documentOperator={order.created_by}
+          orderNo={placementOrders[0]?.placement_no ?? order.order_no}
+          qrValue={placementOrders[0] ? `placement:${placementOrders[0].id}` : `inbound:${order.id}`}
+          documentOperator={order.created_by}
           info={[
             { label: '지시번호', value: order.order_no }, { label: '입고처', value: order.vendor_name },
             { label: '창고', value: order.warehouse_name }, { label: '상태', value: order.status },
