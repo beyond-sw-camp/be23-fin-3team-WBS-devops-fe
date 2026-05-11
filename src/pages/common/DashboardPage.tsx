@@ -5,10 +5,13 @@ import { Typography, Card, Col, Row, List, Tag, Empty, Button, Tooltip, Space, S
 import {
   InboxOutlined,
   WarningOutlined,
-  FileTextOutlined,
-  CloudDownloadOutlined,
   StopOutlined,
 } from '@ant-design/icons';
+import {
+  KpiStatCardReact,
+  KPI_ICON_NEW_ORDER,
+  KPI_ICON_NEW_PURCHASE,
+} from '@/vue-components';
 import { MapPinned, TriangleAlert, ExternalLink, Settings, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import PendingOrdersPanel from './dashboard/PendingOrdersPanel';
 import ActiveOrdersPanel from './dashboard/ActiveOrdersPanel';
@@ -277,22 +280,22 @@ export default function DashboardPage() {
       {/* ── 상단 KPI 카드 — 워크플로우 순(주문/발주 → 지시서 → 입출고 → 재고) ── */}
       <Row gutter={[14, 14]} style={{ marginBottom: 20 }}>
         <Col xs={24} sm={12} flex="1 1 220px" style={{ minWidth: 0 }}>
-          <StatAccentCard
+          <KpiStatCardReact
             title="신규 주문"
             subtitle="출고지시서 미생성"
             value={summary?.new_sales_order_count ?? 0}
             accent="#34d399"
-            icon={<FileTextOutlined />}
+            iconHtml={KPI_ICON_NEW_ORDER}
             onClick={() => navigate('/order/outbound/new')}
           />
         </Col>
         <Col xs={24} sm={12} flex="1 1 220px" style={{ minWidth: 0 }}>
-          <StatAccentCard
+          <KpiStatCardReact
             title="신규 발주"
             subtitle="입고지시서 미생성"
             value={summary?.new_purchase_order_count ?? 0}
             accent="#22d3ee"
-            icon={<CloudDownloadOutlined />}
+            iconHtml={KPI_ICON_NEW_PURCHASE}
             onClick={() => navigate('/order/inbound/new')}
           />
         </Col>
