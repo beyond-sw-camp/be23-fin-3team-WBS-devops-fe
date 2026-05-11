@@ -43,6 +43,12 @@
   .ant-layout-header,
   .ant-breadcrumb,
   .no-print,
+  .app-floating-ui,
+  .app-activity-sider,
+  .app-chatbot-toggle,
+  .app-chatbot-panel,
+  .ant-tooltip,
+  .ant-tooltip-content,
   nav, header, footer,
   [class*="Sider"],
   [class*="Header"] { display: none !important; }
