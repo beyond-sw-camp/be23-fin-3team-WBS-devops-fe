@@ -11,10 +11,12 @@ import type Konva from 'konva';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ZoneType, ZoneLayout } from '@/types/warehouse';
 import { useZonesByWarehouse, useZoneLayouts, useWarehouseCanvas } from '@/hooks/useWarehouseQuery';
+import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import { useProductCategoryRoots } from '@/hooks/useMasterQuery';
 import { useContainerSize } from '@/hooks/useContainerSize';
 import * as warehouseApi from '@/api/warehouse';
 import { ZONE_TYPE_LABEL } from '@/utils/labels';
+import { zoneInventorySummary } from '@/utils/inventoryGuard';
 import {
   EDITOR_CANVAS_BG,
   EDITOR_ZONE_FILL,
@@ -189,6 +191,7 @@ export default function LayoutEditTab({ warehouseId, onZoneDrillDown, readonly =
   }, [highlightZoneIds]);
   const { data: canvas } = useWarehouseCanvas(warehouseId);
   const { data: zonesAll = [] } = useZonesByWarehouse(warehouseId);
+  const { data: inventoryByRack } = useInventoryByRack(warehouseId);
   // 운영 중인 구역만 — 비활성은 구역 관리 탭에서 활성화 후 다시 진입
   const zones = useMemo(() => zonesAll.filter((z) => z.is_active !== false), [zonesAll]);
   const { data: productCategories = [] } = useProductCategoryRoots();
@@ -465,6 +468,24 @@ export default function LayoutEditTab({ warehouseId, onZoneDrillDown, readonly =
   }, []);
 
   const doDelete = () => {
+    const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
+    const blocked = selectedShapes
+      .filter((s) => s.kind === 'zone')
+      .map((s) => {
+        const zid = s.data?.zone_id != null ? String(s.data.zone_id) : '';
+        if (!zid) return null;
+        const { hasInventory, occupiedRackCodes } = zoneInventorySummary(inventoryByRack, zid);
+        if (!hasInventory) return null;
+        return { zoneName: s.label || zid, occupiedRackCodes };
+      })
+      .filter((v): v is { zoneName: string; occupiedRackCodes: string[] } => v !== null);
+    if (blocked.length > 0) {
+      const detail = blocked
+        .map((b) => `${b.zoneName} (${b.occupiedRackCodes.slice(0, 3).join(', ')}${b.occupiedRackCodes.length > 3 ? ` 외 ${b.occupiedRackCodes.length - 3}개` : ''})`)
+        .join(' / ');
+      message.error(`재고가 남아있어 삭제할 수 없는 구역이 있습니다: ${detail}. 재고를 비운 뒤 다시 시도하세요.`);
+      return;
+    }
     const n = shapes.filter((s) => !selectedIds.has(s.id));
     push(n);
     setSelectedIds(new Set());
@@ -703,6 +724,23 @@ export default function LayoutEditTab({ warehouseId, onZoneDrillDown, readonly =
           .filter((id): id is string => !!id),
       );
       const deletedZoneIds = [...loadedZoneIdsRef.current].filter((zoneId) => !remainingZoneIds.has(zoneId));
+
+      const blockedZones = deletedZoneIds
+        .map((zid) => {
+          const { hasInventory, occupiedRackCodes } = zoneInventorySummary(inventoryByRack, zid);
+          if (!hasInventory) return null;
+          const zone = zones.find((z) => z.id === zid);
+          return { zoneName: zone?.name ?? zid, occupiedRackCodes };
+        })
+        .filter((v): v is { zoneName: string; occupiedRackCodes: string[] } => v !== null);
+      if (blockedZones.length > 0) {
+        const detail = blockedZones
+          .map((b) => `${b.zoneName} (${b.occupiedRackCodes.slice(0, 3).join(', ')}${b.occupiedRackCodes.length > 3 ? ` 외 ${b.occupiedRackCodes.length - 3}개` : ''})`)
+          .join(' / ');
+        message.error(`재고가 남아있어 삭제할 수 없는 구역이 있습니다: ${detail}. 재고를 비운 뒤 다시 저장하세요.`);
+        setSaving(false);
+        return;
+      }
 
       let working = [...zones];
       const zoneLayoutsPayload: ZoneLayout[] = [];
