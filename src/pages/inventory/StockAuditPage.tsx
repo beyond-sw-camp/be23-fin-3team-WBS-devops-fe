@@ -9,11 +9,11 @@ import type { ColumnsType } from 'antd/es/table';
 import type { StockCountOrder, StockCountStatus } from '@/types/inventory';
 import { useStockCountOrders, useCreateStockCount, useStartStockCount, useCancelStockCount, useSearchStockCounts } from '@/hooks/useInventoryQuery';
 import { useProductFilterForOrder } from '@/hooks/useProductFilterForOrder';
-import { ProductFilterTriggerButton, ProductFilterStatusBar, ProductSearchModal } from '@/components/ProductSearch';
-import type { Product } from '@/types/product';
+import { ProductFilterTriggerButton, ProductFilterStatusBar } from '@/components/ProductSearch';
 import { useWarehouses } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import PermissionButton from '@/components/PermissionButton';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import { useAuth } from '@/hooks/useAuth';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
@@ -84,9 +84,7 @@ export default function StockAuditPage() {
     [orders, warehouseMap],
   );
 
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const selectedProductIds = useMemo(() => selectedProducts.map((p) => p.id), [selectedProducts]);
-  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
   // 모달에서 선택된 창고에 따라 inventory 조회 (productId → locationId 매핑용)
   const selectedWarehouseId = Form.useWatch('warehouseId', form) as string | undefined;
@@ -107,6 +105,27 @@ export default function StockAuditPage() {
     return m;
   }, [inventoryByRack]);
 
+  /** 선택된 창고에 실제로 재고가 있는 상품 목록 — 실사 대상 후보 */
+  const productsInWarehouse = useMemo(() => {
+    if (!inventoryByRack) return [] as { id: string; sku: string; name: string; totalQty: number }[];
+    const byProduct = new Map<string, { id: string; sku: string; name: string; totalQty: number }>();
+    inventoryByRack.racks.forEach((rack) => {
+      rack.locations.forEach((loc) => {
+        if (!loc.product_id) return;
+        const prev = byProduct.get(loc.product_id);
+        const qty = (loc.available_qty ?? 0) + (loc.reserved_qty ?? 0) + (loc.pending_qty ?? 0) + (loc.defect_qty ?? 0);
+        if (prev) prev.totalQty += qty;
+        else byProduct.set(loc.product_id, {
+          id: loc.product_id,
+          sku: loc.product_sku ?? '-',
+          name: loc.product_name ?? '-',
+          totalQty: qty,
+        });
+      });
+    });
+    return Array.from(byProduct.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [inventoryByRack]);
+
   const handleCreate = () => {
     form.validateFields().then((values) => {
       if (selectedProductIds.length === 0) {
@@ -121,7 +140,7 @@ export default function StockAuditPage() {
         const locs = locationsByProduct.get(pid) ?? [];
         if (locs.length === 0) {
           // 이 창고에 그 상품 재고 없음 → 실사 대상 아님
-          const product = selectedProducts.find((p) => p.id === pid);
+          const product = productsInWarehouse.find((p) => p.id === pid);
           missing.push(product?.name ?? pid);
         } else {
           locs.forEach((locationId) => items.push({ productId: pid, locationId }));
@@ -141,7 +160,7 @@ export default function StockAuditPage() {
           onSuccess: (newId) => {
             message.success('실사 지시서 생성');
             setModalOpen(false);
-            setSelectedProducts([]);
+            setSelectedProductIds([]);
             navigate(`/inventory/stock-count/${newId}`);
           },
         },
@@ -171,6 +190,10 @@ export default function StockAuditPage() {
       title: '상태', dataIndex: 'status', key: 'status', width: 100, align: 'center',
       render: (v: StockCountStatus) => <Tag color={statusConfig[v]?.color}>{statusConfig[v]?.label ?? v}</Tag>,
     },
+    {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
+    },
     { title: '비고', dataIndex: 'note', key: 'note', ellipsis: true },
     { title: '생성일', dataIndex: 'created_at', key: 'created_at', width: 110 },
     {
@@ -196,7 +219,7 @@ export default function StockAuditPage() {
             {...productFilter}
             matchedProductCount={productFilter.productIds?.length ?? null}
           />
-          <PermissionButton resource="STOCK_COUNT" action="CREATE" type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setSelectedProducts([]); setModalOpen(true); }}>실사 지시서 생성</PermissionButton>
+          <PermissionButton resource="STOCK_COUNT" action="CREATE" type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setSelectedProductIds([]); setModalOpen(true); }}>실사 지시서 생성</PermissionButton>
         </Space>
       </div>
       {productFilter.isFiltering && (
@@ -216,66 +239,37 @@ export default function StockAuditPage() {
           <Form.Item name="warehouseId" label="창고" rules={[{ required: true, message: '창고를 선택하세요' }]}>
             <Select
               placeholder="창고 선택"
-              onChange={() => setSelectedProducts([])}
+              onChange={() => setSelectedProductIds([])}
               options={warehouses.filter((w) => w.is_active).map((w) => ({ label: `${w.code} — ${w.name}`, value: w.id }))}
             />
           </Form.Item>
           <Form.Item label="실사 대상 상품" required>
-            <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              <Space wrap>
-                <PermissionButton
-                  resource="STOCK_COUNT"
-                  action="CREATE"
-                  icon={<PlusOutlined />}
-                  onClick={() => setProductPickerOpen(true)}
-                >
-                  상품 추가
-                </PermissionButton>
-                <Tag color={selectedProducts.length > 0 ? 'blue' : 'default'}>
-                  선택 {selectedProducts.length}개
-                </Tag>
-              </Space>
-              {selectedProducts.length > 0 && (
-                <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 6, padding: 8 }}>
-                  <Space wrap size={[6, 6]}>
-                    {selectedProducts.map((p) => (
-                      <Tag
-                        key={p.id}
-                        closable
-                        onClose={(e) => {
-                          e.preventDefault();
-                          setSelectedProducts((prev) => prev.filter((it) => it.id !== p.id));
-                        }}
-                      >
-                        {p.sku} · {p.name}
-                      </Tag>
-                    ))}
-                  </Space>
-                </div>
-              )}
-              {!selectedWarehouseId && (
-                <div style={{ fontSize: 12, color: '#94a3b8' }}>창고를 먼저 선택하세요.</div>
-              )}
+            <Space direction="vertical" style={{ width: '100%' }} size={6}>
+              <Select
+                mode="multiple"
+                placeholder={selectedWarehouseId ? '실사할 상품 선택 (창고 내 재고 있는 상품만 표시)' : '창고를 먼저 선택하세요'}
+                disabled={!selectedWarehouseId}
+                value={selectedProductIds}
+                onChange={(ids: string[]) => setSelectedProductIds(ids)}
+                options={productsInWarehouse.map((p) => ({
+                  value: p.id,
+                  label: `${p.sku} · ${p.name} (${p.totalQty.toLocaleString()}개)`,
+                }))}
+                showSearch
+                optionFilterProp="label"
+                allowClear
+                maxTagCount="responsive"
+                style={{ width: '100%' }}
+                notFoundContent={selectedWarehouseId ? '이 창고에 재고가 있는 상품이 없습니다' : '창고를 먼저 선택하세요'}
+              />
+              <Tag color={selectedProductIds.length > 0 ? 'blue' : 'default'}>
+                선택 {selectedProductIds.length}개
+              </Tag>
             </Space>
           </Form.Item>
           <Form.Item name="note" label="비고"><Input.TextArea rows={2} /></Form.Item>
         </Form>
       </Modal>
-
-      <ProductSearchModal
-        open={productPickerOpen}
-        onCancel={() => setProductPickerOpen(false)}
-        multiple
-        title="실사 대상 상품 선택"
-        onSelect={(picked) => {
-          // 기존 선택과 합치되 중복 제거
-          setSelectedProducts((prev) => {
-            const map = new Map(prev.map((p) => [p.id, p]));
-            picked.forEach((p) => map.set(p.id, p));
-            return Array.from(map.values());
-          });
-        }}
-      />
     </>
   );
 }

@@ -68,6 +68,7 @@ interface BePendingOrderItem {
   itemCount: number | null;
   totalQty: number | null;
   createdAt: string;
+  assignedTo?: string | null;
 }
 interface BePendingOrderResponse {
   items: BePendingOrderItem[];
@@ -104,6 +105,7 @@ function mapPendingOrder(b: BePendingOrderItem): PendingOrderItem {
     item_count: b.itemCount ?? 0,
     total_qty: b.totalQty ?? 0,
     created_at: b.createdAt,
+    assigned_to: b.assignedTo ?? null,
   };
 }
 
