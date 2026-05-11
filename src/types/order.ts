@@ -73,6 +73,8 @@ export interface InboundOrder {
   created_at: string;
   approved_by?: string | null;
   approved_at?: string | null;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
   total_items?: number;
   total_qty?: number;
 }
@@ -216,6 +218,8 @@ export interface OutboundOrder {
   /** BE 가 직접 내려주는 승인자 이름 */
   approved_by_name?: string | null;
   approved_at?: string | null;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
   total_items?: number;
   total_qty?: number;
   batch_id?: string | null;

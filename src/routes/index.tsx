@@ -50,6 +50,7 @@ import SalesOrderProgressPage from '@/pages/order/SalesOrderProgressPage';
 import PickingListPage from '@/pages/order/PickingListPage';
 import PickingDetailPage from '@/pages/order/PickingDetailPage';
 import IntegratedOrdersPage from '@/pages/order/IntegratedOrdersPage';
+import AutoAssignmentPage from '@/pages/order/AutoAssignmentPage';
 import TransferListPage from '@/pages/order/TransferListPage';
 import TransferDetailPage from '@/pages/order/TransferDetailPage';
 import IncompleteOrderPage from '@/pages/order/IncompleteOrderPage';
@@ -161,6 +162,7 @@ export const routes: RouteObject[] = [
       { path: 'order/transfer/:id', element: <G r="TRANSFER"><TransferDetailPage /></G> },
       { path: 'order/incomplete', element: <IncompleteOrderPage /> },
       { path: 'orders/integrated', element: <IntegratedOrdersPage /> },
+      { path: 'orders/auto-assignment', element: <AutoAssignmentPage /> },
 
       // 기타 입출고 운영 — 입고/출고 그룹별 메뉴에서 진입 (둘 다 동일 페이지)
       { path: 'etc-inout', element: <Navigate to="/etc-inout/in" replace /> },
