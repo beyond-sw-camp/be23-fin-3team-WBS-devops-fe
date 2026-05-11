@@ -13,6 +13,8 @@ import { useAllPlacements, useCompletePlacementItem, useSearchPlacementOrders, u
 import { useAuth } from '@/hooks/useAuth';
 import { useProductFilterForOrder } from '@/hooks/useProductFilterForOrder';
 import { ProductFilterTriggerButton, ProductFilterStatusBar } from '@/components/ProductSearch';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
+import { useUserNameMap } from '@/hooks/useUserNameMap';
 
 const { Title, Text } = Typography;
 
@@ -44,6 +46,7 @@ export default function PlacementListPage() {
   const completeMutation = useCompletePlacementItem();
   const { hasPermission } = useAuth();
   const canUpdate = hasPermission('INBOUND', 'UPDATE');
+  const userMap = useUserNameMap();
 
   // 입고지시서의 expected_date 매핑 — 적치 항목 자체에 날짜가 없어 부모 지시서로부터 가져와 필터
   const { data: inboundOrders = [] } = useInboundOrders();
@@ -172,6 +175,10 @@ export default function PlacementListPage() {
         const v = expectedDateMap.get(r.inbound_order_id);
         return v ? <span style={{ color: '#475569', fontSize: 12 }}>{v}</span> : <span style={{ color: '#cbd5e1' }}>-</span>;
       },
+    },
+    {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} userMap={userMap} />,
     },
     {
       title: '적치', key: 'placed', width: 70, align: 'center',

@@ -14,6 +14,7 @@ import { useWarehouses } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import { getSuggestedLocations, type RackLocationInventory, type SuggestedLocation } from '@/api/inventory';
 import PermissionButton from '@/components/PermissionButton';
+import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -315,6 +316,10 @@ export default function TransferListPage() {
     {
       title: '상태', dataIndex: 'status', key: 'status', width: 90, align: 'center',
       render: (v: TransferOrderStatus) => <Tag color={STATUS_CONFIG[v]?.color}>{STATUS_CONFIG[v]?.label ?? v}</Tag>,
+    },
+    {
+      title: '배정 작업자', key: 'assigned_to', width: 130,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
     },
     { title: '품목', dataIndex: 'total_items', key: 'total_items', width: 60, align: 'center' },
     { title: '수량', dataIndex: 'total_qty', key: 'total_qty', width: 80, align: 'right', render: (v: number) => v?.toLocaleString() ?? '-' },
