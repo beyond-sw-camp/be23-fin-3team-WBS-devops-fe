@@ -121,6 +121,7 @@ const MENU_DEFS: MenuItem[] = [
     key: 'integrated-orders', icon: <UnorderedListOutlined />, label: '지시서 목록',
     children: [
       { key: '/orders/integrated', label: '전체 지시서 목록' },
+      { key: '/orders/auto-assignment', label: '작업자 자동배정' },
     ],
   },
   {
@@ -230,6 +231,7 @@ const breadcrumbMap: Record<string, string> = {
   '/order/return-outbound': '반품 출고 접수',
   '/order/return-outbound/list': '반품 출고 목록',
   '/orders/integrated': '지시서 목록',
+  '/orders/auto-assignment': '작업자 자동배정',
   '/documents/official': '공식 문서함',
   '/documents/evidence': '작업 증빙',
   '/inventory/stocks': '재고 현황',
@@ -254,6 +256,7 @@ const parentMap: Record<string, string> = {
   master: '마스터 관리',
   warehouse: '창고 관리',
   order: '주문 관리',
+  orders: '지시서 목록',
   documents: '문서/증빙 관리',
   inventory: '재고 관리',
   statistics: '통계',

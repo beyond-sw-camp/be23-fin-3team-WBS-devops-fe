@@ -8,7 +8,7 @@ import type { SuggestedLocation } from '@/api/inventory';
 /* ═══════ 백엔드(stock-service) 응답 타입 ═══════ */
 interface BeAsnItemRes { sku: string; productName: string; qty: number; unitPrice: number | string | null }
 interface BeAsnOrderRes { id: string; asnNo: string; supplierName: string | null; shipDate: string | null; expectedDate: string | null; items: BeAsnItemRes[] }
-interface BeInboundOrderRes { id: string; orderNo: string; supplierId: string | null; supplierName: string | null; warehouseId: string | null; warehouseName: string | null; expectedDate: string | null; status: OrderStatus; source: string | null; originId: string | null; originNo: string | null; returnFrom: string | null; createdBy: string | null; createdAt: string | null; approvedBy: string | null; approvedAt: string | null; totalItems: number | null; totalQty: number | null }
+interface BeInboundOrderRes { id: string; orderNo: string; supplierId: string | null; supplierName: string | null; warehouseId: string | null; warehouseName: string | null; expectedDate: string | null; status: OrderStatus; source: string | null; originId: string | null; originNo: string | null; returnFrom: string | null; createdBy: string | null; createdAt: string | null; approvedBy: string | null; approvedAt: string | null; assignedTo?: string | null; assignedToName?: string | null; totalItems: number | null; totalQty: number | null }
 interface BeInboundOrderItemRes { id: string; orderId: string; productId: string | null; sku: string | null; productName: string | null; orderedQty: number; receivedQty: number; defectiveQty: number; remainingQty: number | null; unitPrice: number | string | null; status: InboundItemStatus; lotNo: string | null }
 interface BeInboundReceiptItemRes { id: string; receiptId: string; orderItemId: string; productId: string | null; sku: string | null; productName: string | null; qty: number | null; lotNo: string | null; itemCondition: string | null; inspectedBy: string | null; unitPrice: number | string | null; createdAt: string | null }
 interface BeInboundReceiptRes { id: string; inboundOrderId: string; orderNo: string | null; supplierId: string | null; supplierName: string | null; warehouseId: string | null; warehouseName: string | null; receivedBy: string | null; receivedByName: string | null; receiptNo: string; receivedAt: string | null; note: string | null; createdAt: string | null; items: BeInboundReceiptItemRes[] }
@@ -72,6 +72,8 @@ function mapBeInboundOrder(b: BeInboundOrderRes): InboundOrder {
     created_by: b.createdBy ?? '',
     approved_by: b.approvedBy ?? null,
     approved_at: b.approvedAt ?? null,
+    assigned_to: b.assignedTo ?? null,
+    assigned_to_name: b.assignedToName ?? null,
     created_at: (b.createdAt ?? '').slice(0, 10),
     total_items: b.totalItems ?? 0, total_qty: b.totalQty ?? 0,
   };

@@ -20,6 +20,8 @@ interface BeOutboundOrderRes {
   scheduledDate: string | null;
   status: OrderStatus;
   totalQty: number | null;
+  assignedTo?: string | null;
+  assignedToName?: string | null;
   createdAt: string | null;
   // ── 반품 출고 식별 (BE 가 신규 추가, 일반 출고는 null) ──
   originType?: 'sales_order' | 'manual' | 'return' | null;
@@ -119,6 +121,8 @@ function mapBeOutboundOrder(b: BeOutboundOrderRes): OutboundOrder {
     source: isReturn ? 'return' : 'ERP',
     created_by: '',
     created_at: (b.createdAt ?? '').slice(0, 10),
+    assigned_to: b.assignedTo ?? null,
+    assigned_to_name: b.assignedToName ?? null,
     total_qty: b.totalQty ?? 0,
     origin_type: b.originType ?? null,
     origin_id: b.originId ?? null,
@@ -139,6 +143,8 @@ function mapBeOutboundDetail(b: BeOutboundOrderDetailRes): OutboundOrder {
     created_by_name: b.createdByName,
     approved_by_name: b.approvedByName,
     approved_at: b.approvedAt,
+    assigned_to: b.assignedTo ?? null,
+    assigned_to_name: b.assignedToName ?? null,
     total_items: b.items?.length ?? 0,
     picking_list_ids: b.pickingListIds ?? [],
     source_sales_order_ids: b.sourceSalesOrderIds ?? [],
