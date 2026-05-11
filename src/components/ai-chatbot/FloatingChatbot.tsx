@@ -18,6 +18,7 @@ export default function FloatingChatbot() {
 
       <Tooltip title="AI 어시스턴트" placement="left">
         <Button
+          className="no-print app-floating-ui app-chatbot-toggle"
           type="primary"
           shape="circle"
           size="large"

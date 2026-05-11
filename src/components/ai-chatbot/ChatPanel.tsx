@@ -81,6 +81,7 @@ export default function ChatPanel({ onClose }: Props) {
   return (
     <div
       ref={panelRef}
+      className="no-print app-floating-ui app-chatbot-panel"
       style={{
         position: 'fixed',
         left: position.left,

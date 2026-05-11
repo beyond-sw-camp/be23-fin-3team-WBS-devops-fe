@@ -44,6 +44,7 @@ export default function MyActivitySider({ collapsed, onToggle }: Props) {
   const toggleTab = (
     <Tooltip title={collapsed ? '내 활동 열기' : '내 활동 접기'} placement="left">
       <button
+        className="no-print app-floating-ui"
         type="button"
         onClick={() => onToggle(!collapsed)}
         style={{
@@ -79,6 +80,7 @@ export default function MyActivitySider({ collapsed, onToggle }: Props) {
     <>
       {toggleTab}
       <aside
+        className="no-print app-activity-sider"
         style={{
           width: SIDER_WIDTH,
           background: '#ffffff',
