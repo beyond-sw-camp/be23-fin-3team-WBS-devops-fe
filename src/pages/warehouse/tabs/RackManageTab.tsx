@@ -6,8 +6,10 @@ import RowActionMenu from '@/components/RowActionMenu';
 import type { ColumnsType } from 'antd/es/table';
 import type { Rack } from '@/types/warehouse';
 import { useZonesByWarehouse, useRacks, useUpdateRack } from '@/hooks/useWarehouseQuery';
+import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import { useSuppliers } from '@/hooks/useMasterQuery';
 import { tagColorByKey } from '@/utils/badgeColor';
+import { rackIdHasInventory } from '@/utils/inventoryGuard';
 import OrderQrBadge from '@/components/OrderQrBadge';
 
 export default function RackManageTab({ warehouseId }: { warehouseId: string }) {
@@ -17,6 +19,7 @@ export default function RackManageTab({ warehouseId }: { warehouseId: string }) 
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const rackParams = useMemo(() => selectedZoneId ? { zoneId: selectedZoneId } : { warehouseId }, [selectedZoneId, warehouseId]);
   const { data: racks = [], isLoading } = useRacks(rackParams);
+  const { data: inventoryByRack } = useInventoryByRack(warehouseId);
   const updateRack = useUpdateRack();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Rack | null>(null);
@@ -70,6 +73,13 @@ export default function RackManageTab({ warehouseId }: { warehouseId: string }) 
   };
 
   const handleToggle = (r: Rack) => {
+    if (r.is_active && rackIdHasInventory(inventoryByRack, r.id)) {
+      modal.warning({
+        title: '비활성화할 수 없습니다',
+        content: `랙 "${r.code}"에 재고가 남아있습니다. 재고를 비우거나 다른 랙으로 이동한 뒤 다시 시도하세요.`,
+      });
+      return;
+    }
     modal.confirm({
       title: `${r.is_active ? '비활성화' : '활성화'}?`,
       onOk: () => updateRack.mutate({ id: r.id, data: { is_active: !r.is_active } }),

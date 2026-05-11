@@ -60,6 +60,7 @@ import {
 } from '@/pages/warehouse/warehouseEditorCanvasShared';
 import { buildLocationCode, formatLocationCodeRangeCompact } from '@/utils/locationCode';
 import { rackUtilizationPct } from '@/utils/rackInventoryDisplay';
+import { rackIdHasInventory } from '@/utils/inventoryGuard';
 const CANVAS_BG = EDITOR_CANVAS_BG;
 
 /** 선택 랙 테두리 — 파란 강조 대신 격자 톤에 맞는 슬레이트 */
@@ -816,6 +817,10 @@ export default function ZoneLayoutPage({
 
   const handleDeleteSelectedRack = useCallback(async () => {
     if (!selectedRack || !isZoneDetailView) return;
+    if (rackIdHasInventory(inventoryByRack, selectedRack.id)) {
+      message.error(`랙 "${selectedRack.code}"에 재고가 남아있어 삭제할 수 없습니다. 재고를 비운 뒤 다시 시도하세요.`);
+      return;
+    }
     pushRackUndoSnapshot();
     try {
       await warehouseApi.deleteRack(selectedRack.id);
@@ -827,7 +832,7 @@ export default function ZoneLayoutPage({
     } catch {
       message.error('랙 삭제에 실패했습니다.');
     }
-  }, [selectedRack, isZoneDetailView, pushRackUndoSnapshot, rackLayouts, persistLayoutsForZone, message]);
+  }, [selectedRack, isZoneDetailView, inventoryByRack, pushRackUndoSnapshot, rackLayouts, persistLayoutsForZone, message]);
 
   const scheduleSaveEditedLayout = useCallback(() => {
     if (!selectedRack) return;

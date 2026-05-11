@@ -49,3 +49,14 @@ body {
 #root {
   background: transparent;
 }
+
+/* ─── 카테고리 Cascader: 긴 라벨이 모달을 뚫고 나가지 않도록 컬럼 폭/말줄임 제한 ─── */
+.ws-category-cascader .ant-cascader-menu {
+  min-width: 160px !important;
+  max-width: 220px !important;
+}
+.ws-category-cascader .ant-cascader-menu-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

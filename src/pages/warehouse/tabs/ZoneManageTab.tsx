@@ -6,14 +6,17 @@ import RowActionMenu from '@/components/RowActionMenu';
 import type { ColumnsType } from 'antd/es/table';
 import type { Zone, ZoneType } from '@/types/warehouse';
 import { useZonesByWarehouse, useUpdateZone } from '@/hooks/useWarehouseQuery';
+import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import { ZONE_TYPE_COLOR, ZONE_TYPE_LABEL } from '@/utils/labels';
 import { tagColorByKey } from '@/utils/badgeColor';
+import { zoneInventorySummary } from '@/utils/inventoryGuard';
 
 const CATEGORY_OPTS = ['전자기기', '가전제품', '생활용품', '반품', '폐기'];
 
 export default function ZoneManageTab({ warehouseId }: { warehouseId: string }) {
   const navigate = useNavigate();
   const { data: zones = [], isLoading } = useZonesByWarehouse(warehouseId);
+  const { data: inventoryByRack } = useInventoryByRack(warehouseId);
   const updateZone = useUpdateZone();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Zone | null>(null);
@@ -53,6 +56,18 @@ export default function ZoneManageTab({ warehouseId }: { warehouseId: string }) 
 
   const handleToggle = (r: Zone) => {
     const action = r.is_active ? '비활성화' : '활성화';
+    if (r.is_active) {
+      const { hasInventory, occupiedRackCodes } = zoneInventorySummary(inventoryByRack, r.id);
+      if (hasInventory) {
+        const preview = occupiedRackCodes.slice(0, 5).join(', ');
+        const more = occupiedRackCodes.length > 5 ? ` 외 ${occupiedRackCodes.length - 5}개` : '';
+        modal.warning({
+          title: '비활성화할 수 없습니다',
+          content: `구역 "${r.name}"의 랙(${preview}${more})에 재고가 남아있습니다. 재고를 비우거나 다른 위치로 이동한 뒤 다시 시도하세요.`,
+        });
+        return;
+      }
+    }
     modal.confirm({
       title: `${action}?`,
       onOk: () => updateZone.mutate(

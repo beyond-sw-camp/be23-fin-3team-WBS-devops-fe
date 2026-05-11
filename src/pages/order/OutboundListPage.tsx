@@ -791,6 +791,8 @@ export default function OutboundListPage() {
                 placeholder="창고 선택"
                 loading={manualWhLoading}
                 options={manualWarehouseOptions}
+                popupMatchSelectWidth={false}
+                styles={{ popup: { root: { minWidth: 280 } } }}
               />
             </Form.Item>
             <Form.Item name="scheduledDate" label="출고예정일" style={{ width: 160, marginBottom: 0 }} rules={[{ required: true, message: '예정일을 선택하세요.' }]}>
