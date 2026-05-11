@@ -281,9 +281,11 @@ export default function InboundPlacementPage() {
           <Space size={8} align="center">
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/order/inbound/${id}`)}>지시서</Button>
             <Title level={4} style={{ margin: 0, color: '#0f172a' }}>적치 지시서 — {order.order_no}</Title>
-            <Popover content={<OrderQrBadge value={`inbound:${order.id}`} label={order.order_no} title="입고 지시서" size={160} />} trigger="click">
-              <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b', fontSize: 18 }} />
-            </Popover>
+            {placementOrders[0] && (
+              <Popover content={<OrderQrBadge value={`placement:${placementOrders[0].id}`} label={placementOrders[0].placement_no} title="적치 지시서" size={160} />} trigger="click">
+                <Button type="text" size="small" icon={<QrcodeOutlined />} style={{ color: '#64748b', fontSize: 18 }} />
+              </Popover>
+            )}
           </Space>
           <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 }}>
             <Button icon={<PrinterOutlined />} onClick={() => window.print()}>출력</Button>
