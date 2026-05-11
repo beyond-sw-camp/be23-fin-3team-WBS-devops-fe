@@ -411,6 +411,8 @@ export default function EtcInOutDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['etc-inout-items', orderId] });
       queryClient.invalidateQueries({ queryKey: ['etc-inout-orders'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stocks'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-by-rack'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
     } catch (err) {
       message.error(extractApiErrorMessage(err, '완료 처리에 실패했습니다.'));
     } finally {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Typography, Table, Tag, Modal, Form, Select, Input, DatePicker, InputNumber,
@@ -12,7 +12,7 @@ import { useProductFilterForOrder } from '@/hooks/useProductFilterForOrder';
 import { ProductFilterTriggerButton, ProductFilterStatusBar } from '@/components/ProductSearch';
 import { useWarehouses } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
-import type { RackLocationInventory } from '@/api/inventory';
+import { getSuggestedLocations, type RackLocationInventory, type SuggestedLocation } from '@/api/inventory';
 import PermissionButton from '@/components/PermissionButton';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
@@ -163,24 +163,37 @@ export default function TransferListPage() {
     return Array.from(byProduct.values());
   }, [occupiedLocations]);
 
-  // 도착 창고의 빈 로케이션 — 도착지 선택 옵션
-  const { data: toInventoryByRack } = useInventoryByRack(toWarehouseId);
-  const emptyLocations = useMemo(() => {
-    if (!toInventoryByRack) return [];
-    const locs: { location_id: string; label: string }[] = [];
-    toInventoryByRack.racks.forEach((rack) => {
-      rack.locations.forEach((loc) => {
-        if (loc.total_qty === 0) {
-          locs.push({ location_id: loc.location_id, label: `${rack.rack_code} · ${loc.location_code}` });
-        }
-      });
-    });
-    return locs;
-  }, [toInventoryByRack]);
+  // 도착 위치 후보 — 행별로 상품·수량·도착창고 기반 백엔드 추천 (one-SKU-per-location 정책 적용됨)
+  const [suggestionsByRow, setSuggestionsByRow] = useState<Record<number, SuggestedLocation[]>>({});
+
+  const refreshSuggestionsForRow = async (rowKey: number, productId: string, qty: number) => {
+    if (!productId || !toWarehouseId) {
+      setSuggestionsByRow((prev) => { const next = { ...prev }; delete next[rowKey]; return next; });
+      return;
+    }
+    try {
+      const sugs = await getSuggestedLocations(productId, toWarehouseId, qty > 0 ? qty : undefined);
+      setSuggestionsByRow((prev) => ({ ...prev, [rowKey]: sugs }));
+    } catch {
+      setSuggestionsByRow((prev) => ({ ...prev, [rowKey]: [] }));
+    }
+  };
 
   // 이동 품목 행
   const [itemRows, setItemRows] = useState<TransferItemRow[]>([]);
   let rowKeySeq = 0;
+
+  // 도착 창고 변경 시 — 기존 추천/도착선택 무효화 후 productId 있는 행 재조회
+  useEffect(() => {
+    setSuggestionsByRow({});
+    setItemRows((prev) => prev.map((r) => ({ ...r, toLocationId: '' })));
+    if (!toWarehouseId) return;
+    itemRows.forEach((r) => {
+      if (r.productId) void refreshSuggestionsForRow(r.key, r.productId, r.orderedQty);
+    });
+    // itemRows 변경에 의한 재호출 방지 — toWarehouseId만 트리거
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toWarehouseId]);
 
   const addItemRow = () => {
     setItemRows((prev) => [...prev, {
@@ -193,6 +206,7 @@ export default function TransferListPage() {
 
   const removeItemRow = (key: number) => {
     setItemRows((prev) => prev.filter((r) => r.key !== key));
+    setSuggestionsByRow((prev) => { const next = { ...prev }; delete next[key]; return next; });
   };
 
   // 특정 위치의 남은 재고 = 가용량 − 다른 행들이 이미 쓰고 있는 양
@@ -224,9 +238,11 @@ export default function TransferListPage() {
       sku: best.loc.product_sku ?? '-',
       fromLocationId: best.loc.location_id,
       fromLabel: `${best.loc.rack_code} · ${best.loc.location_code}`,
+      toLocationId: '',
       maxQty: best.remaining,
       orderedQty: best.remaining,
     }));
+    void refreshSuggestionsForRow(key, productId, best.remaining);
   };
 
   const openModal = () => {
@@ -234,6 +250,7 @@ export default function TransferListPage() {
     setFromWarehouseId(null);
     setToWarehouseId(null);
     setItemRows([]);
+    setSuggestionsByRow({});
     setModalOpen(true);
   };
 
@@ -263,6 +280,14 @@ export default function TransferListPage() {
       if (new Set(toLocations).size !== toLocations.length) {
         message.warning('도착 위치가 중복되었습니다. 빈 위치별로 한 행만 가능합니다.');
         return;
+      }
+      // 도착지 수용량 초과 검증
+      for (const r of itemRows) {
+        const sug = (suggestionsByRow[r.key] ?? []).find((s) => s.location_id === r.toLocationId);
+        if (sug && sug.available_capacity != null && r.orderedQty > sug.available_capacity) {
+          message.warning(`${sug.location_code} 수용량 초과 (남은 ${sug.available_capacity}, 요청 ${r.orderedQty})`);
+          return;
+        }
       }
       createMutation.mutate(
         {
@@ -394,17 +419,36 @@ export default function TransferListPage() {
             </Tooltip>
             <ArrowRightOutlined style={{ color: '#94a3b8', flexShrink: 0 }} />
             <Select
-              size="small" placeholder="도착 위치" style={{ width: 200 }}
+              size="small" placeholder={row.productId ? '도착 위치' : '상품 먼저 선택'} style={{ width: 240 }}
               value={row.toLocationId || undefined}
               onChange={(v) => setItemRows((p) => p.map((r) => r.key !== row.key ? r : { ...r, toLocationId: v }))}
               showSearch optionFilterProp="label"
-              options={emptyLocations.map((l) => ({ label: l.label, value: l.location_id }))}
+              disabled={!row.productId || !toWarehouseId}
+              notFoundContent={row.productId ? '추천 가능한 위치 없음' : '상품을 먼저 선택하세요'}
+              options={(suggestionsByRow[row.key] ?? [])
+                .filter((s) => s.location_id !== row.fromLocationId)
+                .map((s) => {
+                  const cap = s.available_capacity != null ? `남은 ${s.available_capacity}` : '무제한';
+                  return {
+                    value: s.location_id,
+                    label: `${s.location_code} · ${cap}`,
+                  };
+                })}
             />
             <InputNumber
               size="small" min={1}
-              max={row.fromLocationId ? getLocationRemaining(row.fromLocationId, row.key) : row.maxQty}
+              max={(() => {
+                const sourceMax = row.fromLocationId ? getLocationRemaining(row.fromLocationId, row.key) : row.maxQty;
+                const dest = (suggestionsByRow[row.key] ?? []).find((s) => s.location_id === row.toLocationId);
+                if (dest && dest.available_capacity != null) return Math.min(sourceMax, dest.available_capacity);
+                return sourceMax;
+              })()}
               value={row.orderedQty}
-              onChange={(v) => setItemRows((p) => p.map((r) => r.key !== row.key ? r : { ...r, orderedQty: Number(v ?? 0) }))}
+              onChange={(v) => {
+                const next = Number(v ?? 0);
+                setItemRows((p) => p.map((r) => r.key !== row.key ? r : { ...r, orderedQty: next }));
+              }}
+              onBlur={() => { if (row.productId) void refreshSuggestionsForRow(row.key, row.productId, row.orderedQty); }}
               style={{ width: 80 }}
             />
             <Button size="small" danger icon={<DeleteOutlined />} onClick={() => removeItemRow(row.key)} />

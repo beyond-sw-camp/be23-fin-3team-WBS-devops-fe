@@ -1074,6 +1074,7 @@ interface BeTransferOrderRes {
 interface BeTransferItemRes {
   id: string; transferOrderId: string; productId: string;
   productName: string | null; fromLocationId: string; toLocationId: string;
+  fromLocationCode: string | null; toLocationCode: string | null;
   orderedQty: number; processedQty: number; defectQty: number;
   lotNo: string | null; status: string;
 }
@@ -1102,6 +1103,8 @@ function mapBeTransferItem(b: BeTransferItemRes): TransferOrderItem {
     id: b.id, transfer_order_id: b.transferOrderId,
     product_id: b.productId, product_name: b.productName ?? '-',
     from_location_id: b.fromLocationId, to_location_id: b.toLocationId,
+    from_location_code: b.fromLocationCode ?? null,
+    to_location_code: b.toLocationCode ?? null,
     ordered_qty: b.orderedQty, processed_qty: b.processedQty,
     defect_qty: b.defectQty ?? 0, lot_no: b.lotNo ?? null,
     status: b.status as TransferItemStatus,
