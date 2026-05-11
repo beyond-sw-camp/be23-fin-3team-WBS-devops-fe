@@ -31,6 +31,7 @@ import {
 import type { Warehouse } from '@/types/warehouse';
 import { useWarehouseDetail, useUpdateWarehouse, useZonesByWarehouse, useRacks } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
+import { warehouseInventorySummary } from '@/utils/inventoryGuard';
 import './warehouseInfoTab.css';
 
 const { Paragraph, Text } = Typography;
@@ -64,7 +65,7 @@ export default function WarehouseInfoTab({ warehouseId }: { warehouseId: string 
   const updateMutation = useUpdateWarehouse();
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
 
   const utilNum = useMemo(() => {
     if (wh?.rack_utilization_percent != null) {
@@ -131,6 +132,18 @@ export default function WarehouseInfoTab({ warehouseId }: { warehouseId: string 
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
+      if (wh?.is_active && values.is_active === false) {
+        const { hasInventory, occupiedRackCodes } = warehouseInventorySummary(inventoryByRack);
+        if (hasInventory) {
+          const preview = occupiedRackCodes.slice(0, 5).join(', ');
+          const more = occupiedRackCodes.length > 5 ? ` 외 ${occupiedRackCodes.length - 5}개` : '';
+          modal.warning({
+            title: '비활성화할 수 없습니다',
+            content: `창고 내 랙(${preview}${more})에 재고가 남아있습니다. 재고를 비우거나 다른 창고로 이동한 뒤 다시 시도하세요.`,
+          });
+          return;
+        }
+      }
       await updateMutation.mutateAsync({
         id: warehouseId,
         data: { ...values, updated_at: new Date().toISOString().slice(0, 10) },

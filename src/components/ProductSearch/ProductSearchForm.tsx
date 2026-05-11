@@ -228,6 +228,7 @@ export default function ProductSearchForm({
               placeholder="대분류 → 중분류 → 소분류"
               allowClear
               style={{ width: '100%' }}
+              popupClassName="ws-category-cascader"
             />
           </Field>
         )}
