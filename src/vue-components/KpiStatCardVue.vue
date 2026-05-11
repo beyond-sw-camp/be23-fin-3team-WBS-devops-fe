@@ -42,7 +42,6 @@ const handleClick = () => {
     :class="{ clickable: !!onClick }"
     @click="handleClick"
   >
-    <div class="kpi-vue-tag">Vue</div>
     <div class="kpi-row">
       <div
         class="kpi-icon"
@@ -92,20 +91,6 @@ const handleClick = () => {
 .kpi-card.clickable:hover {
   box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
   transform: translateY(-1px);
-}
-
-.kpi-vue-tag {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 9px;
-  font-weight: 700;
-  color: #42b883;
-  background: #42b88314;
-  border: 1px solid #42b88333;
-  border-radius: 4px;
-  padding: 1px 5px;
-  letter-spacing: 0.4px;
 }
 
 .kpi-row {
