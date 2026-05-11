@@ -1072,7 +1072,7 @@ interface BeTransferOrderRes {
   toWarehouseId: string | null; toWarehouseName: string | null;
   expectedDate: string | null; note: string | null;
   status: string; createdBy: string | null;
-  approvedBy: string | null; approvedAt: string | null;
+  approvedBy: string | null; assignedTo?: string | null; assignedToName?: string | null; approvedAt: string | null;
   createdAt: string | null; totalItems: number; totalQty: number;
   items?: BeTransferItemRes[];
 }
@@ -1097,6 +1097,8 @@ function mapBeTransferOrder(b: BeTransferOrderRes): TransferOrder {
     status: b.status as TransferOrderStatus,
     created_by: b.createdBy ?? '',
     approved_by: b.approvedBy ?? null,
+    assigned_to: b.assignedTo ?? null,
+    assigned_to_name: b.assignedToName ?? null,
     approved_at: b.approvedAt ?? null,
     created_at: (b.createdAt ?? '').slice(0, 10),
     total_items: b.totalItems ?? 0,

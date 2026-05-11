@@ -163,6 +163,7 @@ export interface PlacementItem {
   placement_order_id: string;
   inbound_order_id: string;
   warehouse_id?: string;
+  assigned_to?: string | null;
   order_no?: string;
   placement_no?: string;
   seq: number;
@@ -407,6 +408,8 @@ export interface TransferOrder {
   status: TransferOrderStatus;
   created_by: string;
   approved_by: string | null;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
   approved_at: string | null;
   created_at: string;
   total_items: number;

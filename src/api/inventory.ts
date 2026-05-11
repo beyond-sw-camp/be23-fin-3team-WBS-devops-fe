@@ -418,7 +418,7 @@ export const getInventoryTransactionsByRef = async (
 
 interface BeStockCountOrderRes {
   id: string; orderNo: string; warehouseId: string | null;
-  status: string; createdBy: string | null; note: string | null;
+  status: string; createdBy: string | null; assignedTo?: string | null; assignedToName?: string | null; note: string | null;
   createdAt: string | null; completedAt: string | null;
   items?: BeStockCountItemRes[] | null;
 }
@@ -436,7 +436,10 @@ function mapBeStockCountOrder(b: BeStockCountOrderRes): StockCountOrder {
     warehouse_id: b.warehouseId ?? '',
     warehouse_name: '', // 호출부에서 warehouses와 조인
     status: (b.status ?? 'draft') as StockCountStatus,
-    created_by: b.createdBy ?? '', note: b.note ?? '',
+    created_by: b.createdBy ?? '',
+    assigned_to: b.assignedTo ?? null,
+    assigned_to_name: b.assignedToName ?? null,
+    note: b.note ?? '',
     created_at: (b.createdAt ?? '').slice(0, 10),
     completed_at: b.completedAt ?? null,
   };
