@@ -21,7 +21,7 @@ import PrintDocument from '@/components/PrintDocument';
 
 const { Title, Text } = Typography;
 
-const ORIGIN_LABEL: Record<InboundReceiptOriginType, { label: string; color: string }> = {
+const ORIGIN_LABEL: Record<string, { label: string; color: string }> = {
   purchase_order: { label: '발주', color: 'blue' },
   manual: { label: '수동', color: 'default' },
   return: { label: '반품', color: 'volcano' },
@@ -146,7 +146,7 @@ export default function InboundReceiptListPage() {
       title: '출처유형', dataIndex: 'origin_type', key: 'origin_type', width: 90, align: 'center',
       render: (v: InboundReceiptOriginType | null) => {
         if (!v) return <span style={{ color: '#94a3b8' }}>-</span>;
-        const cfg = ORIGIN_LABEL[v];
+        const cfg = ORIGIN_LABEL[v] ?? { label: v, color: 'default' };
         return <Tag color={cfg.color}>{cfg.label}</Tag>;
       },
     },

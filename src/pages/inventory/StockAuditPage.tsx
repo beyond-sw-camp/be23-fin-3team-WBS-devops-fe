@@ -14,6 +14,7 @@ import { useWarehouses } from '@/hooks/useWarehouseQuery';
 import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import PermissionButton from '@/components/PermissionButton';
 import AssignedWorkerCell from '@/components/AssignedWorkerCell';
+import { useUserNameMap } from '@/hooks/useUserNameMap';
 import { useAuth } from '@/hooks/useAuth';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
@@ -57,6 +58,7 @@ export default function StockAuditPage() {
   );
 
   const productFilter = useProductFilterForOrder();
+  const userMap = useUserNameMap();
   const { data: rawOrders = [], isLoading: rawLoading } = useStockCountOrders();
   const { data: searchedOrders = [], isLoading: searchLoading } = useSearchStockCounts(productFilter.productIds);
   const orders = productFilter.isFiltering ? searchedOrders : rawOrders;
@@ -192,7 +194,7 @@ export default function StockAuditPage() {
     },
     {
       title: '배정 작업자', key: 'assigned_to', width: 130,
-      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} userMap={userMap} />,
     },
     { title: '비고', dataIndex: 'note', key: 'note', ellipsis: true },
     { title: '생성일', dataIndex: 'created_at', key: 'created_at', width: 110 },

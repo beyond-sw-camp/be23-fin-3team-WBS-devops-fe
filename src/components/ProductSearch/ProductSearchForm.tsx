@@ -225,6 +225,13 @@ export default function ProductSearchForm({
                   categoryPathLabels: labels.length > 0 ? labels : undefined,
                 }));
               }}
+              displayRender={(labels) => {
+                const stored = draft.categoryPathLabels;
+                if (stored && stored.length === labels.length) {
+                  return stored.join(' / ');
+                }
+                return labels.join(' / ');
+              }}
               placeholder="대분류 → 중분류 → 소분류"
               allowClear
               style={{ width: '100%' }}

@@ -26,6 +26,7 @@ import { getSuggestedLocations, type SuggestedLocation } from '@/api/inventory';
 import type { WarehouseType } from '@/types/warehouse';
 import PermissionButton from '@/components/PermissionButton';
 import AssignedWorkerCell from '@/components/AssignedWorkerCell';
+import { useUserNameMap } from '@/hooks/useUserNameMap';
 import { extractApiErrorMessage, isCapacityExceededError } from '@/utils/apiError';
 
 const { Title } = Typography;
@@ -191,6 +192,7 @@ export default function EtcInOutPage() {
   }, [allWarehouses, warehouseType]);
   const { data: products = [] } = useProducts();
   const { data: stores = [] } = useStores();
+  const userMap = useUserNameMap();
   // 출고처가 필요한 사유 (가이드 표 기준)
   const needsStore = selectedIoType === 'sample_out' || selectedIoType === 'etc_out' || selectedIoType === 'dispose_out';
   // 비고가 필수인 사유 (조정 출고만)
@@ -810,7 +812,7 @@ export default function EtcInOutPage() {
     },
     {
       title: '배정 작업자', key: 'assigned_to', width: 130,
-      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} userMap={userMap} />,
     },
     {
       title: '사유', key: 'reason', width: 130,

@@ -30,6 +30,7 @@ import WaveCreateModal from '@/components/WaveCreateModal';
 import PermissionButton from '@/components/PermissionButton';
 import AssignedWorkerCell from '@/components/AssignedWorkerCell';
 import AtpShortageContent from '@/components/AtpShortageContent';
+import { useUserNameMap } from '@/hooks/useUserNameMap';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
 import type { WorkEventMessage } from '@/types/stomp';
@@ -82,6 +83,7 @@ export default function OutboundListPage() {
 
   // 반품 출고는 [반품 관리] 메뉴에서 별도로 보므로 일반 목록에선 자동 제외
   const productFilter = useProductFilterForOrder();
+  const userMap = useUserNameMap();
   const { data: rawOrders = [], isLoading: rawLoading } = useOutboundOrders({ excludeOriginType: 'return' });
   const { data: searchedOrders = [], isLoading: searchLoading } = useSearchOutboundOrders(
     productFilter.productIds,
@@ -306,7 +308,7 @@ export default function OutboundListPage() {
     { title: '상태', dataIndex: 'status', key: 'status', width: 80, align: 'center', render: (v: OrderStatus) => <Tag color={ORDER_STATUS_CONFIG[v].color}>{ORDER_STATUS_CONFIG[v].label}</Tag> },
     {
       title: '배정 작업자', key: 'assigned_to', width: 130,
-      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} userMap={userMap} />,
     },
     { title: '품목수', dataIndex: 'total_items', key: 'total_items', width: 70, align: 'center' },
     { title: '총수량', dataIndex: 'total_qty', key: 'total_qty', width: 80, align: 'right', render: (v: number) => v?.toLocaleString() ?? '-' },
