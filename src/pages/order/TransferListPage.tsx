@@ -15,6 +15,7 @@ import { useInventoryByRack } from '@/hooks/useInventoryQuery';
 import { getSuggestedLocations, type RackLocationInventory, type SuggestedLocation } from '@/api/inventory';
 import PermissionButton from '@/components/PermissionButton';
 import AssignedWorkerCell from '@/components/AssignedWorkerCell';
+import { useUserNameMap } from '@/hooks/useUserNameMap';
 import { useStompInvalidate } from '@/hooks/useStompInvalidate';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -93,6 +94,7 @@ export default function TransferListPage() {
   const [activeTab, setActiveTab] = useState<TransferTabKey>('all');
 
   const productFilter = useProductFilterForOrder();
+  const userMap = useUserNameMap();
   const { data: rawOrders = [], isLoading: rawLoading } = useTransferOrders();
   const { data: searchedOrders = [], isLoading: searchLoading } = useSearchTransferOrders(productFilter.productIds);
   const allOrders = productFilter.isFiltering ? searchedOrders : rawOrders;
@@ -319,7 +321,7 @@ export default function TransferListPage() {
     },
     {
       title: '배정 작업자', key: 'assigned_to', width: 130,
-      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} />,
+      render: (_, r) => <AssignedWorkerCell assignedTo={r.assigned_to} assignedToName={r.assigned_to_name} userMap={userMap} />,
     },
     { title: '품목', dataIndex: 'total_items', key: 'total_items', width: 60, align: 'center' },
     { title: '수량', dataIndex: 'total_qty', key: 'total_qty', width: 80, align: 'right', render: (v: number) => v?.toLocaleString() ?? '-' },
